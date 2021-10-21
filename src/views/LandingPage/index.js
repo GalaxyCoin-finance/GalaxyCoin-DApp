@@ -1,7 +1,7 @@
-import Page from "../../components/Page";
+import Page from "../../components/root/Page";
 import {makeStyles} from "@material-ui/core";
 
-const landingStyles = makeStyles((theme) => ({
+const styles = makeStyles((theme) => ({
     root: {
         backgroundColor: theme.palette.background.dark,
         display: 'flex',
@@ -23,8 +23,7 @@ const landingStyles = makeStyles((theme) => ({
 }));
 
 const LandingPage = () => {
-
-    const classes = landingStyles();
+    const classes = styles();
 
     return (
         <Page
