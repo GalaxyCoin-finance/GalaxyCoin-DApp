@@ -4,7 +4,7 @@ import {
     Route,
     Switch
 } from "react-router-dom";
-import LoadingScreen from "./components/LoadingScreen";
+import LoadingScreen from "./components/root/LoadingScreen";
 import {ROUTES_NAMES} from "./constants";
 import MainLayout from "./layout/MainLayout";
 
@@ -46,6 +46,24 @@ const routes = [
         exact: true,
         layout: MainLayout,
         component: lazy(() => import("./views/LandingPage"))
+    },
+    {
+        path: ROUTES_NAMES.FARMS,
+        exact: true,
+        layout: MainLayout,
+        component: lazy(() => import("./views/Farms"))
+    },
+    {
+        path: ROUTES_NAMES.LAUNCHPAD,
+        exact: true,
+        layout: MainLayout,
+        component: lazy(() => import("./views/Launchpad"))
+    },
+    {
+        path: ROUTES_NAMES.LOTTERY,
+        exact: true,
+        layout: MainLayout,
+        component: lazy(() => import("./views/Lottery"))
     },
     {
         path: "/",
