@@ -46,16 +46,16 @@ const themesOptions = [
                 active: colors.blueGrey[600]
             },
             background: {
-                default: "#0A0A0A",
+                default: "#161b52",
             },
             primary: {
-                main: "#333135"
+                main: "#42018d"
             },
             secondary: {
-                main: '#E88E17'
+                main: '#e05829'
             },
             tertiary: {
-                main: "#3187C4"
+                main: "#80102a"
             },
             text: {
                 primary: "#d9d9d9",
