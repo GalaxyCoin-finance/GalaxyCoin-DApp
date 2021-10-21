@@ -1,5 +1,5 @@
 {
-  "name": "whirl-ui",
+  "name": "galxy-dapp",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -19,6 +19,7 @@
     "react-feather": "^2.0.9",
     "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.3",
+    "use-wallet": "^0.12.1",
     "web-vitals": "^1.0.1"
   },
   "scripts": {
@@ -47,6 +48,7 @@
   },
   "devDependencies": {
     "@date-io/moment": "^2.10.11",
+    "@material-ui/icons": "^4.11.2",
     "@material-ui/pickers": "^3.3.10",
     "history": "^5.0.0",
     "notistack": "^1.0.9",
