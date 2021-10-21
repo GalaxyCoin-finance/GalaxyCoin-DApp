@@ -1,6 +1,13 @@
-# Getting Started with Create React App
+# React Dapp
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is supposed to serve as a starting point when creating a Decentralised App.
+
+## Plug-n-Play features
+* TopBar/Sidebar
+* Routing
+* Context
+
+## *All credit goes to [@humanshield89](https://github.com/humanshield89) for creating this beautiful scaffold!*
 
 ## Available Scripts
 
