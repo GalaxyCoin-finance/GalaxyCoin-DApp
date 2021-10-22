@@ -46,7 +46,7 @@ const themesOptions = [
                 active: colors.blueGrey[600]
             },
             background: {
-                default: "#161b52",
+                default: "#121648",
             },
             primary: {
                 main: "#42018d"
@@ -57,7 +57,15 @@ const themesOptions = [
             tertiary: {
                 main: "#80102a"
             },
+            specific: {
+                farmBackground: "#122454",
+                farmBackgroundTo: "#21266d",
+                farmCardBorder: "#2f8db3"
+            },
             text: {
+                heading: "#ffac01",
+                subHeading: "#e05829",
+                subSubHeading: "#d03f46",
                 primary: "#d9d9d9",
             },
         },
