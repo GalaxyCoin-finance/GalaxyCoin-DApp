@@ -18,7 +18,7 @@ import MenuIcon from "@material-ui/icons/Menu";
 import {chainId} from '../../utils/config';
 import {User} from "react-feather";
 import {useSnackbar} from 'notistack';
-import Logo from "../../components/root/Logo";
+import Logo from "../../components/Root/Logo";
 
 const drawerWidth = 240;
 
@@ -76,10 +76,9 @@ const topBarStyles = makeStyles((theme) => ({
 
 const TopBar = ({className, ...rest}) => {
     const classes = topBarStyles();
-    // const wallet = useWallet();
+    const wallet = useWallet();
     const history = useHistory();
     const location = useLocation();
-    // const volume = useVolume();
 
     const {enqueueSnackbar} = useSnackbar();
 
@@ -97,19 +96,17 @@ const TopBar = ({className, ...rest}) => {
         )
     }
 
-    // useEffect(() => {
-    //     if (wallet.error instanceof ChainUnsupportedError) {
-    //         if (lastToast === 0 || performance.now() - lastToast > 5000) {
-    //             enqueueSnackbar(`Unsupported network Volume is only available on ${wallet.networkName} chainId (${chainId})`, {variant: 'error'});
-    //             setLastToast(performance.now());
-    //         }
-    //         setWrongNet(true);
-    //     } else {
-    //         setWrongNet(false);
-    //     }
-    //     // if (volume.setWallet)
-    //     //     volume.setWallet(wallet);
-    // }, [wallet])
+    useEffect(() => {
+        if (wallet.error instanceof ChainUnsupportedError) {
+            if (lastToast === 0 || performance.now() - lastToast > 5000) {
+                enqueueSnackbar(`Unsupported network Galaxy Coin is only available on ${wallet.networkName} with chainId (${chainId})`, {variant: 'error'});
+                setLastToast(performance.now());
+            }
+            setWrongNet(true);
+        } else {
+            setWrongNet(false);
+        }
+    }, [wallet]);
 
 
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -161,18 +158,18 @@ const TopBar = ({className, ...rest}) => {
                         </Button>
                     }
                     <Button variant={"contained"} color={'secondary'} className={classes.button} onClick={() => {
-                        // if (wallet.status !== 'connected') {
-                        //     wallet.connect();
-                        //     setLastToast(0);
-                        // }
+                        if (wallet.status !== 'connected') {
+                            wallet.connect();
+                            setLastToast(0);
+                        }
                     }}>
                         <User/>
                         <Typography variant={"subtitle1"} style={{fontSize: '0.9em'}}>
-                            {/*{*/}
-                            {/*    wallet.status === 'connected' && wallet.account*/}
-                            {/*        ? `${wallet.account.slice(0, 6)}...${wallet.account.slice(wallet.account.length - 4, wallet.account.length)}`*/}
-                            {/*        : 'Connect Wallet'*/}
-                            {/*}*/}
+                            {
+                                wallet.status === 'connected' && wallet.account
+                                    ? `${wallet.account.slice(0, 6)}...${wallet.account.slice(wallet.account.length - 4, wallet.account.length)}`
+                                    : 'Connect Wallet'
+                            }
                         </Typography>
                     </Button>
                 </Toolbar>
