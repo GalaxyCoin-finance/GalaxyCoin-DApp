@@ -4,17 +4,15 @@ import {
     Route,
     Switch
 } from "react-router-dom";
-import LoadingScreen from "./components/root/LoadingScreen";
+import LoadingScreen from "./components/Root/LoadingScreen";
 import {ROUTES_NAMES} from "./constants";
-import MainLayout from "./layout/MainLayout";
 
 export const renderRoutes = (routes = []) => {
     return (
-        <Suspense fallback={<LoadingScreen/>}>
+        <Suspense fallback={<LoadingScreen transparent style={{height: '100vh'}}/>}>
             <Switch>
                 {
                     routes.map((route, i) => {
-                        const Layout = route.layout || Fragment;
                         const Component = route.component;
 
                         return (
@@ -23,13 +21,9 @@ export const renderRoutes = (routes = []) => {
                                 path={route.path}
                                 exact={route.exact}
                                 render={(props) => (
-                                    <Layout>
-                                        {
-                                            route.routes
-                                                ? renderRoutes(route.routes)
-                                                : <Component {...props} />
-                                        }
-                                    </Layout>
+                                    route.routes
+                                        ? renderRoutes(route.routes)
+                                        : <Component {...props} />
                                 )}
                             />
                         );
@@ -44,25 +38,21 @@ const routes = [
     {
         path: ROUTES_NAMES.HOME,
         exact: true,
-        layout: MainLayout,
         component: lazy(() => import("./views/LandingPage"))
     },
     {
         path: ROUTES_NAMES.FARMS,
         exact: true,
-        layout: MainLayout,
         component: lazy(() => import("./views/Farms"))
     },
     {
         path: ROUTES_NAMES.LAUNCHPAD,
         exact: true,
-        layout: MainLayout,
         component: lazy(() => import("./views/Launchpad"))
     },
     {
         path: ROUTES_NAMES.LOTTERY,
         exact: true,
-        layout: MainLayout,
         component: lazy(() => import("./views/Lottery"))
     },
     {
