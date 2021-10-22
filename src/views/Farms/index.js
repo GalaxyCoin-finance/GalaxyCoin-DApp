@@ -1,4 +1,4 @@
-import Page from "../../components/root/Page";
+import Page from "../../components/Root/Page";
 import {makeStyles} from "@material-ui/core";
 
 const styles = makeStyles((theme) => ({
