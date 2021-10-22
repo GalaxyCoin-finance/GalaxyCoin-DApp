@@ -46,18 +46,26 @@ const themesOptions = [
                 active: colors.blueGrey[600]
             },
             background: {
-                default: "#0A0A0A",
+                default: "#121648",
             },
             primary: {
-                main: "#333135"
+                main: "#42018d"
             },
             secondary: {
-                main: '#E88E17'
+                main: '#e05829'
             },
             tertiary: {
-                main: "#3187C4"
+                main: "#80102a"
+            },
+            specific: {
+                farmBackground: "#122454",
+                farmBackgroundTo: "#21266d",
+                farmCardBorder: "#2f8db3"
             },
             text: {
+                heading: "#ffac01",
+                subHeading: "#e05829",
+                subSubHeading: "#d03f46",
                 primary: "#d9d9d9",
             },
         },
