@@ -11,11 +11,24 @@ import {createTheme} from './theme';
 import routes, {renderRoutes} from './routes';
 import {HashRouter} from 'react-router-dom';
 import MainLayout from "./layout/MainLayout";
+import Background from "./components/Root/Background";
 
 const jss = create({plugins: [...jssPreset().plugins, rtl()]});
 
+const appStyles = makeStyles((theme) => ({
+    background: {
+        position: "fixed",
+        top: '60',
+        zIndex: -10,
+        filter: 'blur(3px)',
+        height: '100%',
+        width: "100%",
+    },
+}));
+
 const App = () => {
     const {settings} = useSettings();
+    const classes = appStyles();
 
     const theme = createTheme({
         direction: settings.direction,
@@ -34,6 +47,9 @@ const App = () => {
                     >
                         <HashRouter>
                             <GlobalStyles/>
+                            <div className={classes.background}>
+                                <Background/>
+                            </div>
                             <MainLayout>
                                 {renderRoutes(routes)}
                             </MainLayout>
