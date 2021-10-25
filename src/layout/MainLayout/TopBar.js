@@ -97,17 +97,6 @@ const TopBar = ({className, ...rest}) => {
 
     const theme = useTheme();
     const mdDown = useMediaQuery((theme.breakpoints.down('md')));
-    const [text, setText] = useState(false);
-
-    useEffect(() => {
-       console.log(mdDown);
-       if(mdDown)
-           setText(false);
-       else
-           setText(true);
-
-       console.log(text);
-    }, [mdDown]);
 
     const GalaxyTabs = ({orientation}) => {
         return (
