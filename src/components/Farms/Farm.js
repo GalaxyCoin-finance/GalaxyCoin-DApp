@@ -79,7 +79,7 @@ const Farm = ({farmName, farmComposition, expandable}) => {
 
             <Grid container justify={"space-between"} style={{marginTop: '1em'}}>
                 {/*LP Wallet Balance*/}
-                <Grid item xs={12} md={3} direction={"column"}>
+                <Grid item xs={12} md={3}>
                     <Typography className={classes.farmInfoHeading}>
                         APY
                     </Typography>

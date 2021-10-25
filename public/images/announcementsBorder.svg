@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1113.082" height="221" viewBox="0 0 1113.082 221">
+  <defs>
+    <linearGradient id="linear-gradient" x1="0.5" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="0.163"/>
+      <stop offset="0.871"/>
+      <stop offset="1" stop-color="#fff"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-2" x1="0.017" x2="0.994" y2="0.5" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#06f"/>
+      <stop offset="0.506" stop-color="#00b1ff"/>
+      <stop offset="1" stop-color="#0357ff"/>
+    </linearGradient>
+    <filter id="Ellipse_491" x="25.043" y="110" width="1055" height="111" filterUnits="userSpaceOnUse">
+      <feOffset input="SourceAlpha"/>
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feFlood flood-color="#fff"/>
+      <feComposite operator="in" in2="blur"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="Ellipse_492" x="25.043" y="0" width="1055" height="111" filterUnits="userSpaceOnUse">
+      <feOffset input="SourceAlpha"/>
+      <feGaussianBlur stdDeviation="18" result="blur-2"/>
+      <feFlood flood-color="#fff"/>
+      <feComposite operator="in" in2="blur-2"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="Ellipse_500" x="993.329" y="29.112" width="119.752" height="179.829" filterUnits="userSpaceOnUse">
+      <feOffset input="SourceAlpha"/>
+      <feGaussianBlur stdDeviation="18" result="blur-3"/>
+      <feFlood flood-color="#fff"/>
+      <feComposite operator="in" in2="blur-3"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <linearGradient id="linear-gradient-5" x1="0.017" y1="1" x2="0.994" xlink:href="#linear-gradient-2"/>
+    <filter id="Ellipse_501" x="0" y="30.778" width="119.752" height="179.829" filterUnits="userSpaceOnUse">
+      <feOffset input="SourceAlpha"/>
+      <feGaussianBlur stdDeviation="18" result="blur-4"/>
+      <feFlood flood-color="#fff"/>
+      <feComposite operator="in" in2="blur-4"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <g id="Group_3522" data-name="Group 3522" transform="translate(-401.957 -367)">
+    <g id="Group_1261" data-name="Group 1261" transform="translate(-16.813 20.388)">
+      <g id="Group_1260" data-name="Group 1260" transform="translate(483.112 402.676)" opacity="0.08">
+        <g id="Path_11550" data-name="Path 11550" fill="url(#linear-gradient)">
+          <path d="M 976.8696899414062 109.2317047119141 L 8.64491081237793 109.2317047119141 C 4.153785705566406 109.2317047119141 0.5000356435775757 105.7408294677734 0.5000356435775757 101.450080871582 L 0.5000356435775757 101.4178314208984 L 0.49591064453125 101.3858337402344 L -9.841453552246094 21.56982231140137 C -9.825382232666016 20.5911922454834 -9.039081573486328 18.81521987915039 -7.62308931350708 16.56158256530762 C -6.251839160919189 14.3789587020874 -4.347089290618896 11.83945846557617 -2.259589433670044 9.410833358764648 C 2.321285724639893 4.080958366394043 6.703410625457764 0.4999582767486572 8.64491081237793 0.4999582767486572 L 976.8696899414062 0.4999582767486572 C 977.841552734375 0.4999582767486572 979.4312744140625 1.425958275794983 981.3461303710938 3.107458353042603 C 983.150146484375 4.691583156585693 985.176025390625 6.866708278656006 987.2051391601562 9.3975830078125 C 991.2627563476562 14.45905685424805 994.2127685546875 19.56714057922363 994.2396850585938 21.57265281677246 L 985.0177612304688 101.392707824707 L 985.0145263671875 101.4213333129883 L 985.0145263671875 101.450080871582 C 985.0145263671875 105.7408294677734 981.3607788085938 109.2317047119141 976.8696899414062 109.2317047119141 Z" stroke="none"/>
+          <path d="M 8.64483642578125 0.9999618530273438 C 7.19207763671875 0.9999618530273438 3.2786865234375 3.733955383300781 -1.88055419921875 9.736709594726562 C -3.95233154296875 12.14720916748047 -5.84130859375 14.66545867919922 -7.1998291015625 16.82758331298828 C -9.05279541015625 19.77699279785156 -9.321533203125 21.08053588867188 -9.34063720703125 21.54458618164062 L 0.99993896484375 101.3855819702148 L 0.99993896484375 101.450080871582 C 0.99993896484375 105.4652099609375 4.429443359375 108.7317047119141 8.64483642578125 108.7317047119141 L 976.8696899414062 108.7317047119141 C 981.0850830078125 108.7317047119141 984.5145874023438 105.4652099609375 984.5145874023438 101.450080871582 L 984.5145874023438 101.3924560546875 L 984.5211791992188 101.335334777832 L 993.7390747070312 21.55027770996094 C 993.7234497070312 21.08412933349609 993.4802856445312 19.76568603515625 991.7546997070312 16.79833221435547 C 990.4896850585938 14.62308502197266 988.7352905273438 12.1058349609375 986.81494140625 9.710334777832031 C 982.0172119140625 3.7257080078125 978.2964477539062 0.9999618530273438 976.8696899414062 0.9999618530273438 L 8.64483642578125 0.9999618530273438 M 8.64483642578125 -3.814697265625e-05 L 976.8696899414062 -3.814697265625e-05 C 981.64404296875 -3.814697265625e-05 994.7399291992188 17.02633666992188 994.7399291992188 21.60021209716797 L 985.5145874023438 101.450080871582 C 985.5145874023438 106.0238342285156 981.64404296875 109.7317047119141 976.8696899414062 109.7317047119141 L 8.64483642578125 109.7317047119141 C 3.87042236328125 109.7317047119141 -6.103515625e-05 106.0238342285156 -6.103515625e-05 101.450080871582 L -10.341796875 21.60021209716797 C -10.341796875 17.02633666992188 3.87042236328125 -3.814697265625e-05 8.64483642578125 -3.814697265625e-05 Z" stroke="none" fill="#000"/>
+        </g>
+      </g>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 401.96, 367)" filter="url(#Ellipse_491)">
+      <ellipse id="Ellipse_491-2" data-name="Ellipse 491" cx="473.5" cy="1.5" rx="473.5" ry="1.5" transform="translate(79.04 164)" fill="url(#linear-gradient-2)"/>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 401.96, 367)" filter="url(#Ellipse_492)">
+      <ellipse id="Ellipse_492-2" data-name="Ellipse 492" cx="473.5" cy="1.5" rx="473.5" ry="1.5" transform="translate(79.04 54)" fill="url(#linear-gradient-2)"/>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 401.96, 367)" filter="url(#Ellipse_500)">
+      <ellipse id="Ellipse_500-2" data-name="Ellipse 500" cx="36" cy="1.5" rx="36" ry="1.5" transform="translate(1059.08 83.48) rotate(97)" fill="url(#linear-gradient-2)"/>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 401.96, 367)" filter="url(#Ellipse_501)">
+      <ellipse id="Ellipse_501-2" data-name="Ellipse 501" cx="36" cy="1.5" rx="36" ry="1.5" transform="translate(56.98 84.78) rotate(83)" fill="url(#linear-gradient-5)"/>
+    </g>
+  </g>
+</svg>

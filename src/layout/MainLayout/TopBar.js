@@ -1,10 +1,10 @@
 import {
     AppBar,
     Button,
-    Divider, Drawer,
+    Divider, Drawer, Grid,
     Hidden, IconButton,
     makeStyles,
-    Toolbar
+    Toolbar, useMediaQuery, useTheme
 } from "@material-ui/core";
 import clsx from "clsx";
 import React, {useEffect, useState} from "react";
@@ -34,7 +34,7 @@ const topBarStyles = makeStyles((theme) => ({
     },
     tabs: {
         flexGrow: 1,
-        marginLeft: '2em'
+        marginLeft: '0.5em',
     },
     volText: {
         color: theme.palette.primary.main,
@@ -71,6 +71,16 @@ const topBarStyles = makeStyles((theme) => ({
     },
     flewGrow: {
         flexGrow: 1
+    },
+    tickerHeading: {
+        textAlign: "center",
+        fontSize: 20,
+        color: "white"
+    },
+    tickerPrice: {
+        textAlign: "center",
+        fontSize: 15,
+        color: theme.palette.text.heading
     }
 }));
 
@@ -85,13 +95,27 @@ const TopBar = ({className, ...rest}) => {
     const [lastToast, setLastToast] = useState(0);
     const [wrongNet, setWrongNet] = useState(false);
 
+    const theme = useTheme();
+    const mdDown = useMediaQuery((theme.breakpoints.down('md')));
+    const [text, setText] = useState(false);
+
+    useEffect(() => {
+       console.log(mdDown);
+       if(mdDown)
+           setText(false);
+       else
+           setText(true);
+
+       console.log(text);
+    }, [mdDown]);
+
     const GalaxyTabs = ({orientation}) => {
         return (
             <Tabs value={location.pathname} onChange={handleChange} className={classes.tabs} orientation={orientation}>
-                <Tab label="Home" value={ROUTES_NAMES.HOME}/>
-                <Tab label="Farms" value={ROUTES_NAMES.FARMS}/>
-                <Tab label="Lottery" value={ROUTES_NAMES.LOTTERY}/>
-                <Tab label="Launchpad" value={ROUTES_NAMES.LAUNCHPAD}/>
+                <Tab className={classes.tabText} label="Home" value={ROUTES_NAMES.HOME}/>
+                <Tab className={classes.tabText} label="Farms" value={ROUTES_NAMES.FARMS}/>
+                <Tab className={classes.tabText} label="Lottery" value={ROUTES_NAMES.LOTTERY}/>
+                <Tab className={classes.tabText} label="Launchpad" value={ROUTES_NAMES.LAUNCHPAD}/>
             </Tabs>
         )
     }
@@ -121,7 +145,7 @@ const TopBar = ({className, ...rest}) => {
 
     const drawer = (
         <div style={{paddingTop: '0.5em',}}>
-            <Logo/>
+            <Logo withText={true}/>
             <Divider style={{marginTop: '1em'}}/>
             <GalaxyTabs orientation={"vertical"}/>
             <Divider/>
@@ -146,9 +170,15 @@ const TopBar = ({className, ...rest}) => {
                     </Hidden>
 
                     <Hidden smDown>
-                        <Logo/>
+
+                        <Logo withText={!mdDown}/>
                         <GalaxyTabs/>
                     </Hidden>
+
+                    {/*Prices*/}
+                    <Ticker name={"GLXY"}/>
+                    <Ticker name={"GAX"}/>
+
                     {
                         wrongNet &&
                         <Button variant={"outlined"} className={classes.button}>
@@ -194,6 +224,31 @@ const TopBar = ({className, ...rest}) => {
         </div>
 
     );
+}
+
+const Ticker = ({name, address}) => {
+    const classes = topBarStyles();
+
+    const [price, setPrice] = useState(2);
+    const [fetchedPrice, setFetchedPrice] = useState(true);
+
+    useEffect(() => {
+        // Get price
+        if(!fetchedPrice){
+            //
+        }
+    }, [fetchedPrice]);
+
+    return (
+        <Grid container item xs={1} direction={"column"} alignContent={"center"}>
+            <Typography className={classes.tickerHeading}>
+                {name}
+            </Typography>
+            <Typography className={classes.tickerPrice}>
+                ${price.toFixed(4)}
+            </Typography>
+        </Grid>
+    )
 }
 
 export default TopBar;
