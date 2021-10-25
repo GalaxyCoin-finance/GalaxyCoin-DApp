@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {Box, makeStyles} from "@material-ui/core";
 import {useHistory} from "react-router-dom";
 import {ROUTES_NAMES} from "../../constants";
@@ -14,7 +14,7 @@ const styles = makeStyles((theme) => ({
     })
 );
 
-const Logo = (props) => {
+const Logo = ({withText}) => {
     const history = useHistory();
     const classes = styles();
 
@@ -22,12 +22,23 @@ const Logo = (props) => {
         <Box className={classes.root} onClick={() => {
             history.push(ROUTES_NAMES.HOME)
         }}>
-            <img
-                alt="Logo"
-                height={62}
-                src={"/images/logo-topbar.svg"}
-                {...props}
-            />
+            {
+                withText &&
+                <img
+                    alt="Logo"
+                    height={62}
+                    src={"/images/logo-topbar.svg"}
+                />
+            }
+
+            {
+                !withText &&
+                <img
+                    alt="Logo"
+                    height={62}
+                    src={"/images/logo-topbar-smdown.png"}
+                />
+            }
         </Box>
     )
 };

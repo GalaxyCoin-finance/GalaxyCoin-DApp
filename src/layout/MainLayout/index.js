@@ -1,6 +1,7 @@
 import {makeStyles} from "@material-ui/core";
 import TopBar from "./TopBar";
 import PropTypes from "prop-types";
+import Footer from "../../components/Root/Footer";
 
 const mainLayoutStyle = makeStyles((theme) => ({
     root: {
@@ -14,7 +15,6 @@ const mainLayoutStyle = makeStyles((theme) => ({
         display: "flex",
         flex: "1 1 auto",
         overflow: "hidden",
-        paddingTop: 64
     },
     contentContainer: {
         display: "flex",
@@ -24,7 +24,8 @@ const mainLayoutStyle = makeStyles((theme) => ({
     content: {
         flex: "1 1 auto",
         height: "100%",
-        overflow: "auto"
+        overflow: "hidden",
+        paddingTop: 64
     }
 }));
 
@@ -41,6 +42,7 @@ const MainLayout = ({children}) => {
                     </div>
                 </div>
             </div>
+            <Footer/>
         </div>
     );
 }
