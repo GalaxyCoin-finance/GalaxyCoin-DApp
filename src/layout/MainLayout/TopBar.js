@@ -97,25 +97,12 @@ const TopBar = ({className, ...rest}) => {
 
     const theme = useTheme();
     const mdDown = useMediaQuery((theme.breakpoints.down('md')));
-    const [text, setText] = useState(false);
-
-    useEffect(() => {
-       console.log(mdDown);
-       if(mdDown)
-           setText(false);
-       else
-           setText(true);
-
-       console.log(text);
-    }, [mdDown]);
 
     const GalaxyTabs = ({orientation}) => {
         return (
             <Tabs value={location.pathname} onChange={handleChange} className={classes.tabs} orientation={orientation}>
                 <Tab className={classes.tabText} label="Home" value={ROUTES_NAMES.HOME}/>
                 <Tab className={classes.tabText} label="Farms" value={ROUTES_NAMES.FARMS}/>
-                <Tab className={classes.tabText} label="Lottery" value={ROUTES_NAMES.LOTTERY}/>
-                <Tab className={classes.tabText} label="Launchpad" value={ROUTES_NAMES.LAUNCHPAD}/>
             </Tabs>
         )
     }

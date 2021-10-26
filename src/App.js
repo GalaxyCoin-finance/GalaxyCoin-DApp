@@ -12,6 +12,7 @@ import routes, {renderRoutes} from './routes';
 import {HashRouter} from 'react-router-dom';
 import MainLayout from "./layout/MainLayout";
 import Background from "./components/Root/Background";
+import {FarmsProvider} from "./contexts/FarmsContext";
 
 const jss = create({plugins: [...jssPreset().plugins, rtl()]});
 
@@ -45,15 +46,17 @@ const App = () => {
                         dense
                         maxSnack={3}
                     >
-                        <HashRouter>
-                            <GlobalStyles/>
-                            <div className={classes.background}>
-                                <Background/>
-                            </div>
-                            <MainLayout>
-                                {renderRoutes(routes)}
-                            </MainLayout>
-                        </HashRouter>
+                        <FarmsProvider>
+                            <HashRouter>
+                                <GlobalStyles/>
+                                <div className={classes.background}>
+                                    <Background/>
+                                </div>
+                                <MainLayout>
+                                    {renderRoutes(routes)}
+                                </MainLayout>
+                            </HashRouter>
+                        </FarmsProvider>
                     </SnackbarProvider>
                 </MuiPickersUtilsProvider>
             </StylesProvider>

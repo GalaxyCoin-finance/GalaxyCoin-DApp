@@ -1,8 +1,17 @@
 import Page from "../../components/Root/Page";
-import {Card, Container, Grid, makeStyles, Typography} from "@material-ui/core";
+import {Button, Card, Container, Grid, makeStyles, Typography} from "@material-ui/core";
 import Farm from "../../components/Farms/Farm";
-import farmConfigs from '../../utils/farmConfigs';
-import {useState} from "react";
+import {useEffect, useState} from "react";
+import useFarms from "../../hooks/useFarms";
+import {formatLongNumber} from "../../utils/general-utils";
+import {Skeleton} from "@material-ui/lab";
+import {useHistory} from "react-router-dom";
+import {ROUTES_NAMES} from "../../constants";
+import farmConfigs from "../../utils/farmConfigs";
+import {useWallet} from "use-wallet";
+
+const Web3 = require('web3');
+const {fromWei} = Web3.utils;
 
 const styles = makeStyles((theme) => ({
     root: {
@@ -61,14 +70,71 @@ const styles = makeStyles((theme) => ({
         fontSize: 40,
         color: theme.palette.text.heading,
         width: '100%',
-        textAlign: "center"
+        textAlign: 'center'
+    },
+    addLiquidityText: {
+        fontSize: 30,
+        textAlign: 'center',
+        width: '100%'
+    },
+    addLiquidityButton: {
+        fontSize: 30,
+        borderRadius: 20,
+        marginTop: '0.5em'
     }
 }));
 
 const LandingPage = () => {
     const classes = styles();
+    const history = useHistory();
+    const wallet = useWallet();
 
-    const [containedTokens, setContainedTokens] = useState('1,5,7');
+    const {farms, userInfo} = useFarms();
+
+    const [userFarms, setUserFarms] = useState([]);
+    const [highestAPY, setHighestAPY] = useState(0);
+    const [initApy, setInitApy] = useState(false);
+
+    useEffect(() => {
+        if(farms.length > 0 && !initApy){
+            let dumHighestAPY = 0;
+            for(let i = 0; i < farms.length; i++) {
+                if(farms[i].apy > dumHighestAPY) {
+                    dumHighestAPY = farms[i].apy
+                }
+            }
+            setHighestAPY(formatLongNumber(dumHighestAPY, 2));
+            setInitApy(true);
+        }
+    }, [farms, initApy]);
+
+    useEffect(() => {
+        if (farms.length > 0 && userInfo && userInfo.length > 0) {
+            let arr = [];
+            for(let i = 0; i < userInfo.length; i++) {
+                if(Number(userInfo[i].staked) !== 0){
+                    arr.push({
+                        pid: i,
+                        name: farmConfigs[i].name,
+                        composition: farmConfigs[i].composition,
+                        apy: farms[i].apy,
+                        stakedBalance: userInfo[i].staked,
+                        pending: userInfo[i].pending
+                    });
+                }
+            }
+
+            setUserFarms(arr);
+        }
+    }, [farms, userInfo]);
+
+    const handleGoToFarm = () => {
+        history.push(ROUTES_NAMES.FARMS);
+    }
+
+    const handleConnect = () => {
+        wallet.connect();
+    }
 
     return (
         <Page
@@ -93,17 +159,47 @@ const LandingPage = () => {
                     </Typography>
 
                     {
-                        farmConfigs.farms.map((farm) => {
-                            if(containedTokens.includes(farm.address))
-                                return (
-                                    <Farm
-                                        farmName={farm.name}
-                                        farmComposition={farm.composition}
-                                    />
-                                )
-
-                            return <></>
+                        userFarms.map((farm) => {
+                            return (
+                                <Farm
+                                    key={farm.name}
+                                    farmName={farm.name}
+                                    farmComposition={farm.composition}
+                                    stakedBalance={farm.stakedBalance}
+                                    apy={farm.apy}
+                                    pendingBalance={farm.pending}
+                                />
+                            )
                         })
+                    }
+
+                    {
+                        wallet.status === 'connected' && userFarms.length === 0 &&
+                            <Grid container direction={"column"} alignItems={"center"}>
+                                <Typography className={classes.addLiquidityText}>
+                                    Add liquidity into pools now! <br/>
+                                    Earn up to
+                                </Typography>
+
+                                <Grid item xs={2} className={classes.addLiquidityText}>
+                                    <b>{initApy && userFarms.length === 0 ? highestAPY : <Skeleton style={{width: 'auto'}} animation={"wave"} />}</b>% APY
+                                </Grid>
+
+                                <Button className={classes.addLiquidityButton} color={"secondary"} variant={"contained"}
+                                    onClick={handleGoToFarm}
+                                >
+                                    Add Liquidity Now!
+                                </Button>
+                            </Grid>
+                    }
+
+                    {
+                        wallet.status !== 'connected' &&
+                        <Button className={classes.addLiquidityButton} color={"secondary"} variant={"contained"}
+                                onClick={handleConnect}
+                        >
+                            Connect wallet
+                        </Button>
                     }
                 </Grid>
 
