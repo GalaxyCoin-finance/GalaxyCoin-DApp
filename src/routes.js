@@ -41,11 +41,6 @@ const routes = [
         component: lazy(() => import("./views/LandingPage"))
     },
     {
-        path: ROUTES_NAMES.FARMS,
-        exact: true,
-        component: lazy(() => import("./views/Farms"))
-    },
-    {
         path: ROUTES_NAMES.LAUNCHPAD,
         exact: true,
         component: lazy(() => import("./views/Launchpad"))

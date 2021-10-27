@@ -3,43 +3,31 @@ const farmConfigs = [
         "name": "mGLXY",
         "composition": "mGLXY = GLXY (50%) / WMATIC + USDT + USDC + LINK + CRV (50%)",
         "pid": 0,
-        "tags": "GALAXY,MATIC,USDT,USDC,LINK,CRV"
+        "tags": "GALAXY,GLXY,MATIC,USDT,USDC,LINK,CRV"
     },
     {
-        "name": "GALAXY",
-        "composition": "GALAXY (100%)",
-        "address": "2",
+        "name": "GLXY",
+        "composition": "GLXY (100%)",
+        "pid": 1,
         "tags": "GALAXY-X,SINGLE-ASSET"
-    },
-    {
-        "name": "GAX-MATIC",
-        "composition": "GAX-MATIC = GAX (50%) / WMATIC (50%)",
-        "address": "3",
-        "tags": "GALAXY-X,MATIC"
-    },
-    {
-        "name": "USDT",
-        "composition": "USDT (100%)",
-        "address": "4",
-        "tags": "USDT,STABLE,SINGLE-ASSET"
     },
     {
         "name": "GAX",
         "composition": "GAX (100%)",
-        "address": "5",
-        "tags": "GALAXY-X,SINGLE-ASSET"
+        "pid": 2,
+        "tags": "GALAXY-X,SINGLE-ASSET,GAX"
     },
     {
-        "name": "USDC",
-        "composition": "USDC (100%)",
-        "address": "6",
-        "tags": "USDC,STABLE,SINGLE-ASSET"
+        "name": "GAX-MATIC",
+        "composition": "GAX-MATIC = GAX (50%) / WMATIC (50%)",
+        "pid": 3,
+        "tags": "GALAXY-X,MATIC,GAX"
     },
     {
-        "name": "MATIC",
-        "composition": "MATIC (100%)",
-        "address": "7",
-        "tags": "MATIC,SINGLE-ASSET"
+        "name": "bGLXY",
+        "composition": "GLXY (50%) / BAL (50%)",
+        "pid": 4,
+        "tags": "GLXY,BAL,GALAXY"
     },
 ]
 
