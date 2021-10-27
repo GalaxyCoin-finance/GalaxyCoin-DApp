@@ -9,6 +9,7 @@ import {useHistory} from "react-router-dom";
 import {ROUTES_NAMES} from "../../constants";
 import farmConfigs from "../../utils/farmConfigs";
 import {useWallet} from "use-wallet";
+import LoadingScreen from "../../components/Root/LoadingScreen";
 
 const Web3 = require('web3');
 const {fromWei} = Web3.utils;
@@ -86,54 +87,55 @@ const styles = makeStyles((theme) => ({
 
 const LandingPage = () => {
     const classes = styles();
-    const history = useHistory();
-    const wallet = useWallet();
 
     const {farms, userInfo} = useFarms();
 
-    const [userFarms, setUserFarms] = useState([]);
-    const [highestAPY, setHighestAPY] = useState(0);
-    const [initApy, setInitApy] = useState(false);
+    const [farmInfo, setFarmInfo] = useState([]);
+    const [initFarm, setInitFarm] = useState(false);
+    const [initUserInfo, setInitUserInfo] = useState(false);
 
     useEffect(() => {
-        if(farms.length > 0 && !initApy){
-            let dumHighestAPY = 0;
-            for(let i = 0; i < farms.length; i++) {
-                if(farms[i].apy > dumHighestAPY) {
-                    dumHighestAPY = farms[i].apy
-                }
-            }
-            setHighestAPY(formatLongNumber(dumHighestAPY, 2));
-            setInitApy(true);
-        }
-    }, [farms, initApy]);
-
-    useEffect(() => {
-        if (farms.length > 0 && userInfo && userInfo.length > 0) {
+        if (farms.length > 0 && !initFarm) {
             let arr = [];
-            for(let i = 0; i < userInfo.length; i++) {
-                if(Number(userInfo[i].staked) !== 0){
-                    arr.push({
-                        pid: i,
-                        name: farmConfigs[i].name,
-                        composition: farmConfigs[i].composition,
-                        apy: farms[i].apy,
-                        stakedBalance: userInfo[i].staked,
-                        pending: userInfo[i].pending
-                    });
-                }
+            for (let i = 0; i < farms.length; i++) {
+                let infoToPush = {
+                    pid: i,
+                    name: farmConfigs[i].name,
+                    composition: farmConfigs[i].composition,
+                    apy: farms[i].apy,
+                    stakedTokenAddress: farms[i].stakedToken.address
+                };
+
+                arr.push(infoToPush);
+            }
+            setFarmInfo(arr);
+            setInitFarm(true);
+        }
+    }, [farms, initFarm]);
+
+    useEffect(() => {
+        // add user info to farms
+        if (farmInfo.length > 0 && userInfo && userInfo.length > 0 && !initUserInfo) {
+            let arr = farmInfo;
+
+            for (let i = 0; i < userInfo.length; i++) {
+                arr[userInfo[i].pid].balance = userInfo[i].balance;
+                arr[userInfo[i].pid].stakedBalance = userInfo[i].staked;
+                arr[userInfo[i].pid].pending = userInfo[i].pending;
             }
 
-            setUserFarms(arr);
+            setFarmInfo(arr);
+            setInitUserInfo(true);
         }
-    }, [farms, userInfo]);
+    }, [farmInfo, userInfo, initUserInfo]);
 
-    const handleGoToFarm = () => {
-        history.push(ROUTES_NAMES.FARMS);
+
+    const handleToPharo = () => {
+        window.open('https://www.pharo.tech/', '_blank');
     }
 
-    const handleConnect = () => {
-        wallet.connect();
+    const handleToVolume = () => {
+        window.open('https://volume.quest/', '_blank');
     }
 
     return (
@@ -155,65 +157,48 @@ const LandingPage = () => {
                 {/*Wallet Balance*/}
                 <Grid component={Card} container item xs={12} className={classes.card} justify={"center"}>
                     <Typography className={classes.heading}>
-                        Wallet Balance
+                        Galaxy Farms
                     </Typography>
 
                     {
-                        userFarms.map((farm) => {
+                        !initFarm &&
+                            <LoadingScreen transparent/>
+                    }
+
+                    {
+                        farmInfo.length > 0 &&
+                        farmInfo.map((farm) => {
                             return (
                                 <Farm
+                                    expandable
                                     key={farm.name}
+                                    // farm info
                                     farmName={farm.name}
                                     farmComposition={farm.composition}
-                                    stakedBalance={farm.stakedBalance}
                                     apy={farm.apy}
+                                    // user info
+                                    balance={farm.balance}
+                                    stakedBalance={farm.stakedBalance}
                                     pendingBalance={farm.pending}
+                                    initUserInfo={initUserInfo}
+                                    stakedTokenAddress={farm.stakedTokenAddress}
+                                    pid={farm.pid}
                                 />
                             )
                         })
-                    }
-
-                    {
-                        wallet.status === 'connected' && userFarms.length === 0 &&
-                            <Grid container direction={"column"} alignItems={"center"}>
-                                <Typography className={classes.addLiquidityText}>
-                                    Add liquidity into pools now! <br/>
-                                    Earn up to
-                                </Typography>
-
-                                <Grid item xs={2} className={classes.addLiquidityText}>
-                                    <b>{initApy && userFarms.length === 0 ? highestAPY : <Skeleton style={{width: 'auto'}} animation={"wave"} />}</b>% APY
-                                </Grid>
-
-                                <Button className={classes.addLiquidityButton} color={"secondary"} variant={"contained"}
-                                    onClick={handleGoToFarm}
-                                >
-                                    Add Liquidity Now!
-                                </Button>
-                            </Grid>
-                    }
-
-                    {
-                        wallet.status !== 'connected' &&
-                        <Button className={classes.addLiquidityButton} color={"secondary"} variant={"contained"}
-                                onClick={handleConnect}
-                        >
-                            Connect wallet
-                        </Button>
                     }
                 </Grid>
 
                 {/*Partnerships*/}
                 <Grid container>
-                    <Grid item xs={12} sm={4}>
-                        <img src={'./images/GLXY-crest.png'}/>
-                    </Grid>
-
-                    <Grid container item xs={12} md={6} justify={"center"}>
+                    <Grid container item xs={12} justify={"center"} alignItems={"center"} direction={"column"}>
                         <Typography className={classes.partnershipsHeading}>
                             Strategic Partnerships
                         </Typography>
-                        <Grid item xs={8}>
+                        <Grid item xs={3} onClick={handleToVolume} style={{cursor: 'pointer'}}>
+                            <img src={'./images/volume.png'} style={{width: '100%'}}/>
+                        </Grid>
+                        <Grid item xs={4} onClick={handleToPharo} style={{cursor: 'pointer'}}>
                             <img src={'./images/pharotech.png'} style={{width: '100%'}}/>
                         </Grid>
                     </Grid>
