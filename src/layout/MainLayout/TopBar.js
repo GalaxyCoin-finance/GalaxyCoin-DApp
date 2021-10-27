@@ -20,7 +20,7 @@ import {User} from "react-feather";
 import {useSnackbar} from 'notistack';
 import Logo from "../../components/Root/Logo";
 import {galaxyAddress, gaxAddress, usdcAddress, glxyPoolId} from "../../utils/config";
-import {getPriceOfGalaxy, getPriceOnBalancerForSinglePool} from "../../utils/price-utils";
+import {getPriceOfGalaxy, getPriceOfGAX, getPriceOnBalancerForSinglePool} from "../../utils/price-utils";
 
 const drawerWidth = 240;
 
@@ -119,12 +119,20 @@ const TopBar = ({className, ...rest}) => {
     }
 
     useEffect(() => {
-        if (!galaxyPrice) {
+        if (!galaxyPrice && chainId === 137) {
             getPriceOfGalaxy(glxyPoolId).then((res) => {
                 setGalaxyPrice(res);
             });
         }
     }, [galaxyPrice]);
+
+    useEffect(() => {
+        if(!gaxPrice && chainId === 137) {
+            getPriceOfGAX().then((res) => {
+                setGaxPrice(res);
+            })
+        }
+    }, [gaxPrice]);
 
     useEffect(() => {
         if (wallet.error instanceof ChainUnsupportedError) {
@@ -191,7 +199,7 @@ const TopBar = ({className, ...rest}) => {
 
                     {/*Prices*/}
                     <Ticker name={"Buy GLXY"} value={galaxyPrice} handleClick={handleToGLXY}/>
-                    <Ticker name={"Buy GAX"} handleClick={handleToGAX}/>
+                    <Ticker name={"Buy GAX"} value={gaxPrice} handleClick={handleToGAX}/>
 
                     {
                         wrongNet &&
