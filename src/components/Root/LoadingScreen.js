@@ -26,7 +26,8 @@ const useStyles = makeStyles((theme) => ({
         padding: theme.spacing(3)
     },
     progress: {
-        marginBottom: "2em"
+        marginBottom: "2em",
+        color: theme.palette.secondary.main
     }
 }));
 
@@ -44,7 +45,7 @@ const LoadingScreen = ({transparent}) => {
     return (
         <div className={transparent ? classes.rootTransparent : classes.root}>
             <CircularProgress className={classes.progress}/>
-            <Typography variant={"h1"} color={"primary"}>
+            <Typography variant={"h1"} color={"secondary"}>
                 Loading
             </Typography>
         </div>
