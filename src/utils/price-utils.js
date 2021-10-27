@@ -1,12 +1,13 @@
-import {rpcUrl, balancerVaultAddress, galaxyAddress, gaxAddress, usdcAddress} from './config';
+import {rpcUrl, balancerVaultAddress, galaxyAddress, gaxLPAddress, usdcAddress, quickswapRouterAddress, maticUsdc} from './config';
 import {balancerVaultAbi} from "./abi/balancer-vault-abi";
 import {univ2LpAbi} from "./abi/univ2-lp-abi";
+import {univ2RouterAbi} from "./abi/univ2-router-abi";
 
 const Web3 = require('web3');
 const web3 = new Web3(rpcUrl);
 const Big = require('big-js');
 
-const {fromWei} = web3.utils;
+const {fromWei, toWei} = web3.utils;
 
 export const getPriceOfGalaxy = async (poolId) => {
     const vaultContract = new web3.eth.Contract(balancerVaultAbi, balancerVaultAddress);
@@ -30,11 +31,24 @@ export const getPriceOfGalaxy = async (poolId) => {
 }
 
 export const getPriceOfGAX = async () => {
-    const uniV2LPContract = new web3.eth.Contract(univ2LpAbi, balancerVaultAddress);
+    const uniV2LPContract = new web3.eth.Contract(univ2LpAbi, gaxLPAddress);
+    const uniV2RouterContract = new web3.eth.Contract(univ2RouterAbi, quickswapRouterAddress);
 
-    // TODO - implement when the LP is live
-    // Get the reserves from the LP itself
-    // getQuote from QuickSwap router - feed reserves and amountIn
+    // Get quote of gax/matic
+    const res = await uniV2LPContract.methods.getReserves().call();
+
+    const gaxMaticQuote = await uniV2RouterContract.methods.quote(toWei("1"), res._reserve1, res._reserve0).call();
+    const priceGAXPerMatic = fromWei(gaxMaticQuote);
+
+    // Get quote of matic/usdc
+    const uniV2LPContractM_U = new web3.eth.Contract(univ2LpAbi, maticUsdc);
+
+    const reservesM_U = await uniV2LPContractM_U.methods.getReserves().call();
+
+    const maticUsdcQuote = await uniV2RouterContract.methods.quote(toWei("1"), reservesM_U._reserve0, reservesM_U._reserve1).call();
+    const priceMatic = maticUsdcQuote*10**-6;
+
+    return (priceGAXPerMatic/priceMatic).toFixed(6).toString();
 }
 
 
