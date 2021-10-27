@@ -19,6 +19,8 @@ import {chainId} from '../../utils/config';
 import {User} from "react-feather";
 import {useSnackbar} from 'notistack';
 import Logo from "../../components/Root/Logo";
+import {galaxyAddress, gaxAddress, usdcAddress, glxyPoolId} from "../../utils/config";
+import {getPriceOfGalaxy, getPriceOnBalancerForSinglePool} from "../../utils/price-utils";
 
 const drawerWidth = 240;
 
@@ -72,6 +74,13 @@ const topBarStyles = makeStyles((theme) => ({
     flewGrow: {
         flexGrow: 1
     },
+    tickerWrapper: {
+        '&:hover': {
+            borderRadius: 8,
+            cursor: 'pointer',
+            backgroundColor: theme.palette.specific.farmBackgroundTo
+        }
+    },
     tickerHeading: {
         textAlign: "center",
         fontSize: 20,
@@ -98,14 +107,24 @@ const TopBar = ({className, ...rest}) => {
     const theme = useTheme();
     const mdDown = useMediaQuery((theme.breakpoints.down('md')));
 
+    const [galaxyPrice, setGalaxyPrice] = useState(undefined);
+    const [gaxPrice, setGaxPrice] = useState(undefined);
+
     const GalaxyTabs = ({orientation}) => {
         return (
             <Tabs value={location.pathname} onChange={handleChange} className={classes.tabs} orientation={orientation}>
                 <Tab className={classes.tabText} label="Home" value={ROUTES_NAMES.HOME}/>
-                <Tab className={classes.tabText} label="Farms" value={ROUTES_NAMES.FARMS}/>
             </Tabs>
         )
     }
+
+    useEffect(() => {
+        if (!galaxyPrice) {
+            getPriceOfGalaxy(glxyPoolId).then((res) => {
+                setGalaxyPrice(res);
+            });
+        }
+    }, [galaxyPrice]);
 
     useEffect(() => {
         if (wallet.error instanceof ChainUnsupportedError) {
@@ -125,10 +144,18 @@ const TopBar = ({className, ...rest}) => {
         setMobileOpen(!mobileOpen);
     }
 
-
     const handleChange = (event, newValue) => {
         history.push(newValue);
     }
+
+    const handleToGLXY = () => {
+        window.open(`https://polygon.balancer.fi/#/trade/0x2791bca1f2de4661ed88a30c99a7a9449aa84174/${galaxyAddress}`, '_blank');
+    }
+
+    const handleToGAX = () => {
+        window.open(`https://quickswap.exchange/#/swap?outputCurrency=${gaxAddress}`, '_blank');
+    }
+
 
     const drawer = (
         <div style={{paddingTop: '0.5em',}}>
@@ -163,8 +190,8 @@ const TopBar = ({className, ...rest}) => {
                     </Hidden>
 
                     {/*Prices*/}
-                    <Ticker name={"GLXY"}/>
-                    <Ticker name={"GAX"}/>
+                    <Ticker name={"Buy GLXY"} value={galaxyPrice} handleClick={handleToGLXY}/>
+                    <Ticker name={"Buy GAX"} handleClick={handleToGAX}/>
 
                     {
                         wrongNet &&
@@ -213,26 +240,18 @@ const TopBar = ({className, ...rest}) => {
     );
 }
 
-const Ticker = ({name, address}) => {
+const Ticker = ({name, value, handleClick}) => {
     const classes = topBarStyles();
 
-    const [price, setPrice] = useState(2);
-    const [fetchedPrice, setFetchedPrice] = useState(true);
-
-    useEffect(() => {
-        // Get price
-        if(!fetchedPrice){
-            //
-        }
-    }, [fetchedPrice]);
-
     return (
-        <Grid container item xs={1} direction={"column"} alignContent={"center"}>
+        <Grid container item xs={1} direction={"column"} alignContent={"center"} className={classes.tickerWrapper}
+              onClick={handleClick}
+        >
             <Typography className={classes.tickerHeading}>
                 {name}
             </Typography>
             <Typography className={classes.tickerPrice}>
-                ${price.toFixed(4)}
+                ${value}
             </Typography>
         </Grid>
     )
