@@ -1,6 +1,6 @@
 import {getBalance, getName, getSymbol, getTokenIconUri, getTotalSupply} from "./erc20-core";
 
-const {rpcUrl, chainId, farmAddress} = require('./config.js');
+const {rpcUrl, chainId} = require('./config.js');
 const Web3 = require('web3');
 const Big = require('big.js');
 const {erc20ABI} = require('../utils/abi/erc20-abi');
@@ -84,10 +84,9 @@ export const getFarms = async (farmContract, ethereum) => {
         const blocksPerWeek = WEEK_SECONDS / averageBlockTime;
         const totalRewardsPerWeek = blocksPerWeek * poolDistPerBlock;
 
-        let volValue = 1
-        // if (pool.lpToken !== volumeAddress)
-        //     volValue = await getVolumeValue(realErc20, await getRealContract(volumeAddress, ethereum, erc20ABI));
-        const apy = (totalRewardsPerWeek * 53 / (Number(pool.stakedAmount) * volValue))  // roughly 53 weeks a year
+        if(pool.stakedAmount === '0')
+            pool.stakedAmount = '1'
+        const apy = (new Big(totalRewardsPerWeek).times(52.1775).div(Number(pool.stakedAmount)).times(100))  // roughly 53 weeks a year
 
         pools.push(
             {
@@ -181,10 +180,10 @@ export const deposit = async (farmContract, pid, amount, wallet) => {
 }
 
 // helper functions
-const getVolumeValue = async (uniLikePairERC20Contract, realVolumeERC20Contract) => {
-    const volBalance = await getBalance(realVolumeERC20Contract, uniLikePairERC20Contract.options.address);
+const getGaxValue = async (uniLikePairERC20Contract, realERC20Contract) => {
+    const gaxBalance = await getBalance(realERC20Contract, uniLikePairERC20Contract.options.address);
     const totalSupply = await getTotalSupply(uniLikePairERC20Contract);
 
     // pool has 50% VOl and 50% BNB
-    return Number(volBalance) * 2 / Number(totalSupply);
+    return Number(gaxBalance) * 2 / Number(totalSupply);
 }
