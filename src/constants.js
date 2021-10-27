@@ -5,7 +5,6 @@ export const THEMES = {
 
 export const ROUTES_NAMES = {
     HOME: "/home",
-    FARMS: "/farm",
     LOTTERY: "/lottery",
     LAUNCHPAD: "/launchpad"
 }
