@@ -29,6 +29,12 @@ const farmConfigs = [
         "pid": 4,
         "tags": "GLXY,BAL,GALAXY"
     },
+    {
+        "name": "vGLXY",
+        "composition": "GLXY (55%) / BAL (45%)",
+        "pid": 5,
+        "tags": "GLXY,BAL,GALAXY"
+    }
 ]
 
 module.exports = farmConfigs;
