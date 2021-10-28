@@ -116,12 +116,24 @@ const Farm = ({
         setFormattedAPY(dum);
     }, []);
 
+    const [fetchingUserInfo, setFetchingUserInfo] = useState(false);
+
+    useEffect(() => {
+        if(wallet.status === 'connected' && !initUserInfo) {
+            setFetchingUserInfo(true);
+        }
+
+        if(initUserInfo)
+            setFetchingUserInfo(false);
+    }, [initUserInfo, wallet]);
+
     const toggleCollapse = () => {
         setOpen(!open);
     }
 
     // Stake
-    const handleStake = async (amount) => {
+    const handleStake = async (amount, busyHandler) => {
+        busyHandler(true);
         const realFarmContract = await getRealContract(
             farmAddress,
             wallet && wallet.status === "connected" ? wallet.ethereum : rpcUrl,
@@ -134,10 +146,15 @@ const Farm = ({
                 autoHideDuration: 3000,
                 action: <ViewOnExplorerButton txHash={txHash}/>
             });
+
+            busyHandler(false);
+        }).catch((err) => {
+            busyHandler(false);
         });
     }
 
-    const handleUnstaking = async (amount) => {
+    const handleUnstaking = async (amount, busyHandler) => {
+        busyHandler(true);
         const realFarmContract = await getRealContract(
             farmAddress,
             wallet && wallet.status === "connected" ? wallet.ethereum : rpcUrl,
@@ -150,10 +167,14 @@ const Farm = ({
                 autoHideDuration: 3000,
                 action: <ViewOnExplorerButton txHash={txHash}/>
             });
+            busyHandler(false);
+        }).catch((err) => {
+            busyHandler(false);
         });
     }
 
-    const handleHarvest = async () => {
+    const handleHarvest = async (busyHandler) => {
+        busyHandler(true);
         const realFarmContract = await getRealContract(
             farmAddress,
             wallet && wallet.status === "connected" ? wallet.ethereum : rpcUrl,
@@ -166,6 +187,9 @@ const Farm = ({
                 autoHideDuration: 3000,
                 action: <ViewOnExplorerButton txHash={txHash}/>
             });
+            busyHandler(false);
+        }).catch((err) => {
+            busyHandler(false);
         });
     }
 
@@ -191,6 +215,7 @@ const Farm = ({
                     <Typography className={classes.farmInfoText}>
                         {apy ? formattedAPY : 0}%
                     </Typography>
+
                 </Grid>
 
                 {/*Staked Balance*/}
@@ -198,9 +223,18 @@ const Farm = ({
                     <Typography className={classes.farmInfoHeading}>
                         Staked Balance
                     </Typography>
-                    <Typography className={classes.farmInfoText}>
-                        {stakedBalance ? `${Number(fromWei(stakedBalance.toString())).toFixed(4)} ${farmName}` : 0}
-                    </Typography>
+                    {
+                        !fetchingUserInfo &&
+                        <Typography className={classes.farmInfoText}>
+                            {stakedBalance ? `${Number(fromWei(stakedBalance.toString())).toFixed(4)} ${farmName}` : 0}
+                        </Typography>
+                    }
+
+                    {
+                        fetchingUserInfo &&
+                        <Skeleton animation={"wave"}/>
+                    }
+
                 </Grid>
 
                 {/*Claimable Balance*/}
@@ -208,9 +242,18 @@ const Farm = ({
                     <Typography className={classes.farmInfoHeading}>
                         Pending
                     </Typography>
-                    <Typography className={classes.farmInfoText}>
-                        {pendingBalance ? Number(fromWei(pendingBalance.toString())).toFixed(4) : 0} GAX
-                    </Typography>
+                    {
+                        !fetchingUserInfo &&
+                        <Typography className={classes.farmInfoText}>
+                            {pendingBalance ? Number(fromWei(pendingBalance.toString())).toFixed(4) : 0} GAX
+                        </Typography>
+                    }
+
+                    {
+                        fetchingUserInfo &&
+                            <Skeleton animation={"wave"}/>
+                    }
+
                 </Grid>
             </Grid>
 
@@ -245,7 +288,7 @@ const FarmFunction = ({
                           value, setValue, // value of function eg. 10.0005 unstaked LP
                           buttonText, handleClick, // eg. Stake, Claim
                           approvedAmount, // other user info
-                          initUserInfo, // controller for data display
+                          initUserInfo, fetchingInfo, // controller for data display
                           stakedTokenAddress, // farm info
                       }) => {
 
@@ -256,9 +299,12 @@ const FarmFunction = ({
     const [amount, setAmount] = useState(0);
     const [notEnough, setNotEnough] = useState(false);
     const [approving, setApproving] = useState(false);
+    const [busy, setBusy] = useState(false);
 
     useEffect(() => {
         if (initUserInfo && value) {
+            console.log(amount);
+            console.log(Number(fromWei(value.toString())));
             if (amount > Number(fromWei(value.toString()))) {
                 setNotEnough(true);
             } else {
@@ -299,11 +345,11 @@ const FarmFunction = ({
                     {
                         wallet.status === 'connected' && name &&
                         <b>{!initUserInfo ? <Skeleton style={{width: '50px'}}
-                                                      animation={"wave"}/> : `${Number(fromWei(value)).toFixed(4)}`}</b>
+                                                      animation={"wave"}/> : `${Number(fromWei(value)).toFixed(5)}`}</b>
                     }
                     {
                         wallet.status !== 'connected' && name &&
-                        `Please connect your wallet`
+                        ``
                     }
                 </Typography>
             </Grid>
@@ -327,16 +373,19 @@ const FarmFunction = ({
             {
                 hasApprove &&
                 <Button className={classes.farmFunctionButton} variant={"contained"} color={"secondary"}
-                        disabled={!initUserInfo || approvedAmount >= amount || approving}
+                        disabled={!initUserInfo || approving}
+                        hidden={approvedAmount >= amount}
                         onClick={handleApprove}
                 >
-                    {approving ? `${<CircularProgress/>} Approving` : 'Approve'}
+                    {approving && <CircularProgress style={{padding: '0.5em', marginRight: '0.2em'}}/>}
+                    {approving ? `Approving` : wallet.status !== 'connected' ? 'Connect Wallet' : 'Approve'}
                 </Button>
             }
 
             <Button className={classes.farmFunctionButton} variant={"contained"} color={"secondary"}
-                    onClick={() => handleClick(amount)} disabled={notEnough}>
-                {!notEnough ? buttonText : 'Insufficient Funds'}
+                    onClick={() => handleClick(amount, setBusy)} disabled={notEnough || wallet.status !== 'connected'}>
+                {busy && <CircularProgress style={{padding: '0.5em', marginRight: '0.2em'}}/>}
+                {notEnough ? 'Insufficient Funds' : wallet.status !== 'connected' ? 'Connect Wallet' : buttonText}
             </Button>
         </Grid>
     )
