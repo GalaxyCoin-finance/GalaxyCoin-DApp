@@ -173,7 +173,7 @@ const Farm = ({
         });
     }
 
-    const handleHarvest = async (busyHandler) => {
+    const handleHarvest = async (amount, busyHandler) => {
         busyHandler(true);
         const realFarmContract = await getRealContract(
             farmAddress,
@@ -303,8 +303,6 @@ const FarmFunction = ({
 
     useEffect(() => {
         if (initUserInfo && value) {
-            console.log(amount);
-            console.log(Number(fromWei(value.toString())));
             if (amount > Number(fromWei(value.toString()))) {
                 setNotEnough(true);
             } else {
