@@ -135,7 +135,7 @@ const TopBar = ({className, ...rest}) => {
     }, [gaxPrice]);
 
     useEffect(() => {
-        if (wallet.error instanceof ChainUnsupportedError) {
+        if (wallet.status === 'connected' && wallet.chainId !== chainId) {
             if (lastToast === 0 || performance.now() - lastToast > 5000) {
                 enqueueSnackbar(`Unsupported network Galaxy Coin is only available on ${wallet.networkName} with chainId (${chainId})`, {variant: 'error'});
                 setLastToast(performance.now());
