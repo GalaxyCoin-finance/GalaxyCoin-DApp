@@ -345,7 +345,7 @@ const FarmFunction = ({
                     {
                         wallet.status === 'connected' && name &&
                         <b>{!initUserInfo ? <Skeleton style={{width: '50px'}}
-                                                      animation={"wave"}/> : `${Number(fromWei(value)).toFixed(5)}`}</b>
+                                                      animation={"wave"}/> : `${Number(fromWei(value ? value.toString() : '0')).toFixed(5)}`}</b>
                     }
                     {
                         wallet.status !== 'connected' && name &&
