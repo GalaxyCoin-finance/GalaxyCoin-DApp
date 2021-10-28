@@ -27,7 +27,7 @@ const Logo = ({withText}) => {
                 <img
                     alt="Logo"
                     height={62}
-                    src={"/images/logo-topbar.svg"}
+                    src={"/images/logo.png"}
                 />
             }
 
