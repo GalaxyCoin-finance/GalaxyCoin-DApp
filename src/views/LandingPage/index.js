@@ -98,7 +98,6 @@ const LandingPage = () => {
         if (farms.length > 0 && !initFarm) {
             let arr = [];
             for (let i = 0; i < farms.length; i++) {
-                console.log(farms[i]);
                 const farmInfo = findFarmInfo(farms[i].pid);
                 if(farms[i].allocationPoints !== '0' && farmInfo) {
                     let infoToPush = {
@@ -120,18 +119,13 @@ const LandingPage = () => {
         // add user info to farms
         if (farmInfo.length > 0 && userInfo && userInfo.length > 0 && !initUserInfo) {
             let arr = farmInfo;
-            console.log('FarmInfo: ', arr);
             for (let i = 0; i < userInfo.length; i++) {
                 const farmIndex = findFarmIndex(arr, userInfo[i].pid);
-                console.log('UserInfo pid: ', userInfo[i].pid);
-                console.log('FarmIndex: ', farmIndex);
                 if (farmIndex) {
                     arr[farmIndex].balance = userInfo[i].balance;
                     arr[farmIndex].stakedBalance = userInfo[i].staked;
                     arr[farmIndex].pending = userInfo[i].pending;
                 }
-
-                console.log()
             }
 
             setFarmInfo(arr);
