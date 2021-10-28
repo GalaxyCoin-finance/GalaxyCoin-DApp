@@ -98,15 +98,18 @@ const LandingPage = () => {
         if (farms.length > 0 && !initFarm) {
             let arr = [];
             for (let i = 0; i < farms.length; i++) {
-                let infoToPush = {
-                    pid: i,
-                    name: farmConfigs[i].name,
-                    composition: farmConfigs[i].composition,
-                    apy: farms[i].apy,
-                    stakedTokenAddress: farms[i].stakedToken.address
-                };
-
-                arr.push(infoToPush);
+                console.log(farms[i]);
+                const farmInfo = findFarmInfo(farms[i].pid);
+                if(farms[i].allocationPoints !== '0' && farmInfo) {
+                    let infoToPush = {
+                        pid: farms[i].pid,
+                        name: farmInfo.name,
+                        composition: farmInfo.composition,
+                        apy: farms[i].apy,
+                        stakedTokenAddress: farms[i].stakedToken.address
+                    };
+                    arr.push(infoToPush);
+                }
             }
             setFarmInfo(arr);
             setInitFarm(true);
@@ -117,11 +120,18 @@ const LandingPage = () => {
         // add user info to farms
         if (farmInfo.length > 0 && userInfo && userInfo.length > 0 && !initUserInfo) {
             let arr = farmInfo;
-
+            console.log('FarmInfo: ', arr);
             for (let i = 0; i < userInfo.length; i++) {
-                arr[userInfo[i].pid].balance = userInfo[i].balance;
-                arr[userInfo[i].pid].stakedBalance = userInfo[i].staked;
-                arr[userInfo[i].pid].pending = userInfo[i].pending;
+                const farmIndex = findFarmIndex(arr, userInfo[i].pid);
+                console.log('UserInfo pid: ', userInfo[i].pid);
+                console.log('FarmIndex: ', farmIndex);
+                if (farmIndex) {
+                    arr[farmIndex].balance = userInfo[i].balance;
+                    arr[farmIndex].stakedBalance = userInfo[i].staked;
+                    arr[farmIndex].pending = userInfo[i].pending;
+                }
+
+                console.log()
             }
 
             setFarmInfo(arr);
@@ -206,6 +216,24 @@ const LandingPage = () => {
             </Container>
         </Page>
     )
+}
+
+function findFarmInfo(pid) {
+    for(let i = 0; i < farmConfigs.length; i++) {
+        if (farmConfigs[i].pid === pid)
+            return farmConfigs[i];
+    }
+
+    return undefined;
+}
+
+function findFarmIndex(farmArr, pid) {
+    for (let i = 0; i < farmArr.length; i++) {
+        if(farmArr[i].pid === pid)
+            return i;
+    }
+
+    return undefined;
 }
 
 export default LandingPage;
