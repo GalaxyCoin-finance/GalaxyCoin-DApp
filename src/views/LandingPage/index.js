@@ -1,18 +1,8 @@
 import Page from "../../components/Root/Page";
-import {Button, Card, Container, Grid, makeStyles, Typography} from "@material-ui/core";
+import {Box, Button, Card, Container, Grid, makeStyles, Typography} from "@material-ui/core";
 import Farm from "../../components/Farms/Farm";
-import {useEffect, useState} from "react";
 import useFarms from "../../hooks/useFarms";
-import {formatLongNumber} from "../../utils/general-utils";
-import {Skeleton} from "@material-ui/lab";
-import {useHistory} from "react-router-dom";
-import {ROUTES_NAMES} from "../../constants";
-import farmConfigs from "../../utils/farmConfigs";
-import {useWallet} from "use-wallet";
 import LoadingScreen from "../../components/Root/LoadingScreen";
-
-const Web3 = require('web3');
-const {fromWei} = Web3.utils;
 
 const styles = makeStyles((theme) => ({
     root: {
@@ -88,51 +78,7 @@ const styles = makeStyles((theme) => ({
 const LandingPage = () => {
     const classes = styles();
 
-    const {farms, userInfo} = useFarms();
-
-    const [farmInfo, setFarmInfo] = useState([]);
-    const [initFarm, setInitFarm] = useState(false);
-    const [initUserInfo, setInitUserInfo] = useState(false);
-
-    useEffect(() => {
-        if (farms.length > 0 && !initFarm) {
-            let arr = [];
-            for (let i = 0; i < farms.length; i++) {
-                const farmInfo = findFarmInfo(farms[i].pid);
-                if(farms[i].allocationPoints !== '0' && farmInfo) {
-                    let infoToPush = {
-                        pid: farms[i].pid,
-                        name: farmInfo.name,
-                        composition: farmInfo.composition,
-                        apy: farms[i].apy,
-                        stakedTokenAddress: farms[i].stakedToken.address
-                    };
-                    arr.push(infoToPush);
-                }
-            }
-            setFarmInfo(arr);
-            setInitFarm(true);
-        }
-    }, [farms, initFarm]);
-
-    useEffect(() => {
-        // add user info to farms
-        if (farmInfo.length > 0 && userInfo && userInfo.length > 0 && !initUserInfo) {
-            let arr = farmInfo;
-            for (let i = 0; i < userInfo.length; i++) {
-                const farmIndex = findFarmIndex(arr, userInfo[i].pid);
-                if (farmIndex) {
-                    arr[farmIndex].balance = userInfo[i].balance;
-                    arr[farmIndex].stakedBalance = userInfo[i].staked;
-                    arr[farmIndex].pending = userInfo[i].pending;
-                }
-            }
-
-            setFarmInfo(arr);
-            setInitUserInfo(true);
-        }
-    }, [farmInfo, userInfo, initUserInfo]);
-
+    const {farms, userInfo, initFarms, updateUserInfos} = useFarms();
 
     const handleToPharo = () => {
         window.open('https://www.pharo.tech/', '_blank');
@@ -151,9 +97,9 @@ const LandingPage = () => {
 
                 {/*Announcements*/}
                 <Grid container justify={"center"}>
-                    <Grid item xs={8} className={classes.announcementBox}>
-                        <Typography className={classes.announcementText} >
-                            Galaxy Coin launch scheduled for 27 October 2021!
+                    <Grid item xs={10} md={8} className={classes.announcementBox}>
+                        <Typography className={classes.announcementText}>
+                            Welcome to Galaxy Coin App
                         </Typography>
                     </Grid>
                 </Grid>
@@ -165,69 +111,45 @@ const LandingPage = () => {
                     </Typography>
 
                     {
-                        !initFarm &&
-                            <LoadingScreen transparent/>
+                        !farms &&
+                        <LoadingScreen transparent/>
                     }
 
                     {
-                        farmInfo.length > 0 &&
-                        farmInfo.map((farm) => {
-                            return (
-                                <Farm
-                                    expandable
-                                    key={farm.name}
-                                    // farm info
-                                    farmName={farm.name}
-                                    farmComposition={farm.composition}
-                                    apy={farm.apy}
-                                    // user info
-                                    balance={farm.balance}
-                                    stakedBalance={farm.stakedBalance}
-                                    pendingBalance={farm.pending}
-                                    initUserInfo={initUserInfo}
-                                    stakedTokenAddress={farm.stakedTokenAddress}
-                                    pid={farm.pid}
-                                />
-                            )
+                        farms && farms.length > 0 &&
+                        farms.map((farm, index) => {
+                            if (farm.allocationPoints > 0)
+                                return (
+                                    <Farm
+                                        expandable
+                                        key={farm.name}
+                                        // farm info
+                                        farm={farm}
+                                        // user info
+                                        userInfo={userInfo ? userInfo[index] : null}
+                                    />
+                                )
                         })
                     }
                 </Grid>
 
                 {/*Partnerships*/}
-                <Grid container>
-                    <Grid container item xs={12} justify={"center"} alignItems={"center"} direction={"column"}>
+                <Box style={{marginBottom: 30}}>
+                    <Box>
                         <Typography className={classes.partnershipsHeading}>
                             Strategic Partnerships
                         </Typography>
-                        <Grid item xs={3} onClick={handleToVolume} style={{cursor: 'pointer'}}>
-                            <img src={'./images/volume.png'} style={{width: '100%'}}/>
-                        </Grid>
-                        <Grid item xs={4} onClick={handleToPharo} style={{cursor: 'pointer'}}>
-                            <img src={'./images/pharotech.png'} style={{width: '100%'}}/>
-                        </Grid>
-                    </Grid>
-                </Grid>
+                    </Box>
+                    <Box style={{display: "flex", margin: 8, justifyContent: "center"}}>
+                        <img onClick={handleToVolume} src={'./images/volume.png'}
+                             style={{maxWidth: 160, margin: '16px', cursor: "pointer"}}/>
+                        <img onClick={handleToPharo} src={'./images/pharotech.png'}
+                             style={{maxWidth: 160, margin: '16px', cursor: "pointer"}}/>
+                    </Box>
+                </Box>
             </Container>
         </Page>
     )
-}
-
-function findFarmInfo(pid) {
-    for(let i = 0; i < farmConfigs.length; i++) {
-        if (farmConfigs[i].pid === pid)
-            return farmConfigs[i];
-    }
-
-    return undefined;
-}
-
-function findFarmIndex(farmArr, pid) {
-    for (let i = 0; i < farmArr.length; i++) {
-        if(farmArr[i].pid === pid)
-            return i;
-    }
-
-    return undefined;
 }
 
 export default LandingPage;

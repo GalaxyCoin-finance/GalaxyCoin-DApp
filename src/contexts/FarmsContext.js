@@ -15,7 +15,9 @@ const FarmsContext = createContext({
 
 export const FarmsProvider = ({children}) => {
     const wallet = useWallet();
-    const [farms, setFarms] = useState([]);
+    const [farms, setFarms] = useState();
+    // TODO: move this to a field on farm
+    // easier to update single farms
     const [userInfo, setUserInfo] = useState();
 
     useEffect(() => {
@@ -28,15 +30,17 @@ export const FarmsProvider = ({children}) => {
 
     useEffect(() => {
         setUserInfo(null);
+        updateUserInfos();
     }, [wallet.account]);
 
-    const updateUserInfos = () => {
-        setUserInfo(null);
-        if (wallet.status === "connected" && farms) {
-            Promise.all(farms.map(farmInfo => {
-                return updateUserInfoForFarm(farmInfo);
-            })).then(arr => setUserInfo(arr));
-        }
+    const updateUserInfos = (background) => {
+        if (!farms)
+            return;
+        if (!background)
+            setUserInfo(null);
+        Promise.all(farms.map(farmInfo => {
+            return updateUserInfoForFarm(farmInfo);
+        })).then(arr => setUserInfo(arr));
     }
 
     const initFarms = async () => {

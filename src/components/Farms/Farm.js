@@ -1,27 +1,39 @@
-import {Button, CircularProgress, Collapse, Grid, makeStyles, TextField, Typography} from "@material-ui/core";
-import {useEffect, useState} from "react";
+import {
+    Box,
+    Button,
+    CircularProgress,
+    Collapse,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    Grid,
+    InputAdornment,
+    InputLabel,
+    makeStyles,
+    OutlinedInput,
+    TextField,
+    Typography
+} from "@material-ui/core";
+import React, {useEffect, useState} from "react";
 import {formatLongNumber} from "../../utils/general-utils";
-import {Skeleton} from "@material-ui/lab";
+import {Alert, Skeleton} from "@material-ui/lab";
 import {useWallet} from "use-wallet";
 import {approve} from "../../utils/erc20-core";
-import {deposit, getRealContract, harvest, withdraw} from "../../utils/farm-core";
+import {deposit, getRealContract, harvest, sleep, waitForTransaction, withdraw} from "../../utils/farm-core";
 import {farmAddress, rpcUrl, explorer} from "../../utils/config.js";
 import {useSnackbar} from "notistack";
 import {erc20ABI} from "../../utils/abi/erc20-abi";
 import {FarmAbi} from "../../utils/abi/farm-abi";
-
-const Web3 = require('web3');
-const {fromWei, toWei} = Web3.utils;
+import useFarms from "../../hooks/useFarms";
+import {fromWei, toBN, toWei} from "web3-utils";
 
 const styles = makeStyles((theme) => ({
     farmBackground: {
-        // backgroundColor: theme.palette.specific.farmBackground,
         backgroundImage: `linear-gradient(to bottom right, ${theme.palette.specific.farmBackground}, ${theme.palette.specific.farmBackgroundTo})`,
         borderRadius: 12,
-        marginBottom: '1em',
-        //
-        borderBottom: `4px solid ${theme.palette.secondary.dark}`,
-        borderRight: `2px solid ${theme.palette.secondary.dark}`
+        marginBottom: '2em',
+        borderBottom: `4px solid ${theme.palette.secondary.light}`,
     },
     farmName: {
         textAlign: "center",
@@ -85,6 +97,9 @@ const styles = makeStyles((theme) => ({
     },
     farmFunctionButton: {
         marginTop: '0.5em'
+    },
+    smallLink: {
+        textDecoration: 'underline',
     }
 }));
 
@@ -99,121 +114,46 @@ export const ViewOnExplorerButton = ({txHash}) => {
 
 
 const Farm = ({
-                  farmName, farmComposition, apy, stakedTokenAddress, pid, // farm info
                   expandable,
-                  stakedBalance, pendingBalance, balance, approvedAmount, // user info
-                  initUserInfo
+                  farm,
+                  userInfo
               }) => {
     const classes = styles();
-    const wallet = useWallet();
-    const {enqueueSnackbar} = useSnackbar();
 
     const [formattedAPY, setFormattedAPY] = useState(0);
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
-        let dum = formatLongNumber(apy, 2);
+        let dum = formatLongNumber(farm.apy, 2);
         setFormattedAPY(dum);
     }, []);
-
-    const [fetchingUserInfo, setFetchingUserInfo] = useState(false);
-
-    useEffect(() => {
-        if(wallet.status === 'connected' && !initUserInfo) {
-            setFetchingUserInfo(true);
-        }
-
-        if(initUserInfo)
-            setFetchingUserInfo(false);
-    }, [initUserInfo, wallet]);
 
     const toggleCollapse = () => {
         setOpen(!open);
     }
 
-    // Stake
-    const handleStake = async (amount, busyHandler) => {
-        busyHandler(true);
-        const realFarmContract = await getRealContract(
-            farmAddress,
-            wallet && wallet.status === "connected" ? wallet.ethereum : rpcUrl,
-            FarmAbi
-        );
-
-        deposit(realFarmContract, pid, toWei(amount.toString()), wallet).then((txHash) => {
-            enqueueSnackbar(`Deposit successful`, {
-                variant: "success",
-                autoHideDuration: 3000,
-                action: <ViewOnExplorerButton txHash={txHash}/>
-            });
-
-            busyHandler(false);
-        }).catch((err) => {
-            busyHandler(false);
-        });
-    }
-
-    const handleUnstaking = async (amount, busyHandler) => {
-        busyHandler(true);
-        const realFarmContract = await getRealContract(
-            farmAddress,
-            wallet && wallet.status === "connected" ? wallet.ethereum : rpcUrl,
-            FarmAbi
-        );
-
-        withdraw(realFarmContract, pid, toWei(amount.toString()), wallet).then((txHash) => {
-            enqueueSnackbar(`Withdrawal successful`, {
-                variant: "success",
-                autoHideDuration: 3000,
-                action: <ViewOnExplorerButton txHash={txHash}/>
-            });
-            busyHandler(false);
-        }).catch((err) => {
-            busyHandler(false);
-        });
-    }
-
-    const handleHarvest = async (amount, busyHandler) => {
-        busyHandler(true);
-        const realFarmContract = await getRealContract(
-            farmAddress,
-            wallet && wallet.status === "connected" ? wallet.ethereum : rpcUrl,
-            FarmAbi
-        );
-
-        harvest(realFarmContract, pid, wallet).then((txHash) => {
-            enqueueSnackbar(`Harvest successful`, {
-                variant: "success",
-                autoHideDuration: 3000,
-                action: <ViewOnExplorerButton txHash={txHash}/>
-            });
-            busyHandler(false);
-        }).catch((err) => {
-            busyHandler(false);
-        });
-    }
-
     return (
-        <Grid container item xs={8} className={classes.farmBackground}>
+        <Grid container item xs={11} sm={11} md={10} lg={10} className={classes.farmBackground}>
             <Grid container item xs={12} justify={"center"} alignContent={"center"} direction={"column"}
                   style={{cursor: expandable ? 'pointer' : "default"}} onClick={toggleCollapse}>
                 <Typography className={classes.farmName} variant={"h2"}>
-                    {farmName}
+                    {farm.name}
                 </Typography>
 
                 <Typography className={classes.farmComposition}>
-                    {farmComposition}
+                    {farm.composition} <a href={farm.buyLink} style={{color: 'cyan'}}
+                                          target={'_blank'}> Get {farm.name} </a>
                 </Typography>
             </Grid>
 
-            <Grid container justify={"space-between"} style={{marginTop: '1em'}}>
+            <Grid container justify={"space-between"} style={{padding: '2em', paddingTop: 0, paddingBottom: 0}}>
                 {/*LP Wallet Balance*/}
                 <Grid item xs={12} md={3}>
                     <Typography className={classes.farmInfoHeading}>
                         APY
                     </Typography>
                     <Typography className={classes.farmInfoText}>
-                        {apy ? formattedAPY : 0}%
+                        {farm.apy ? formattedAPY : 0}%
                     </Typography>
 
                 </Grid>
@@ -224,14 +164,14 @@ const Farm = ({
                         Staked Balance
                     </Typography>
                     {
-                        !fetchingUserInfo &&
+                        userInfo &&
                         <Typography className={classes.farmInfoText}>
-                            {stakedBalance ? `${Number(fromWei(stakedBalance.toString())).toFixed(4)} ${farmName}` : 0}
+                            {userInfo.staked ? `${Number(fromWei(userInfo.staked.toString())).toFixed(4)} ${farm.name}` : 0}
                         </Typography>
                     }
 
                     {
-                        fetchingUserInfo &&
+                        !userInfo &&
                         <Skeleton animation={"wave"}/>
                     }
 
@@ -243,150 +183,414 @@ const Farm = ({
                         Pending
                     </Typography>
                     {
-                        !fetchingUserInfo &&
+                        userInfo &&
                         <Typography className={classes.farmInfoText}>
-                            {pendingBalance ? Number(fromWei(pendingBalance.toString())).toFixed(4) : 0} GAX
+                            {userInfo.pending ? Number(fromWei(userInfo.pending.toString())).toFixed(4) : 0} GAX
                         </Typography>
                     }
 
                     {
-                        fetchingUserInfo &&
-                            <Skeleton animation={"wave"}/>
+                        !userInfo &&
+                        <Skeleton animation={"wave"}/>
                     }
 
                 </Grid>
             </Grid>
-
             {
-                expandable &&
+                expandable && open &&
                 <Collapse in={open} style={{width: '100%'}}>
-                    <Grid container justify={"space-evenly"} direction={"row"}>
-                        {/*Stake*/}
-                        <FarmFunction name={"Unstaked"} value={balance} initUserInfo={initUserInfo} textField hasApprove
-                                      buttonText={'Stake'} stakedTokenAddress={stakedTokenAddress}
-                                      approvedAmount={approvedAmount}
-                                      handleClick={handleStake}
-                        />
-
-                        {/*Unstake*/}
-                        <FarmFunction initUserInfo={initUserInfo} textField buttonText={'Unstake'}
-                                      handleClick={handleUnstaking} value={stakedBalance}
-                        />
-
-                        {/*Claim*/}
-                        <FarmFunction initUserInfo={initUserInfo} buttonText={'Claim'} handleClick={handleHarvest}/>
+                    <Grid container justify={"space-evenly"} direction={"row"} style={{padding: '2em', paddingTop: 0}}>
+                        <ClaimComponent farm={farm} useInfo={userInfo}/>
+                        <WithdrawComponent farm={farm} userInfo={userInfo}/>
+                        <VDiv/>
+                        {userInfo && Number(userInfo.allowance) > Number(userInfo.balance) ?
+                            <DepositComponent farm={farm} userInfo={userInfo}/> :
+                            <ApproveComponent farm={farm} userInfo={userInfo}/>
+                        }
                     </Grid>
                 </Collapse>
+            }
+            {
+                !open &&
+                <Grid container justify={"center"}>
+                    <Button color={'secondary'} onClick={() => setOpen(true)}>
+                        Click here for Details
+                    </Button>
+                </Grid>
             }
         </Grid>
     )
 }
 
-const FarmFunction = ({
-                          name, // function name eg. Staked, Unstaked
-                          textField, hasApprove, // Options
-                          value, setValue, // value of function eg. 10.0005 unstaked LP
-                          buttonText, handleClick, // eg. Stake, Claim
-                          approvedAmount, // other user info
-                          initUserInfo, fetchingInfo, // controller for data display
-                          stakedTokenAddress, // farm info
-                      }) => {
 
-    const classes = styles();
+const VDiv = () => <Grid item xs={12} style={{minHeight: 16}}/>
+
+const ApproveComponent = ({farm, userInfo}) => {
     const wallet = useWallet();
     const {enqueueSnackbar} = useSnackbar();
-
-    const [amount, setAmount] = useState(0);
-    const [notEnough, setNotEnough] = useState(false);
-    const [approving, setApproving] = useState(false);
     const [busy, setBusy] = useState(false);
+    const {updateUserInfos} = useFarms();
 
-    useEffect(() => {
-        if (initUserInfo && value) {
-            if (amount > Number(fromWei(value.toString()))) {
-                setNotEnough(true);
-            } else {
-                setNotEnough(false);
+    const approveFarm = async () => {
+        if (!wallet || !wallet.account) return;
+        setBusy(true);
+        let failed = false;
+        await handleTransactionPromise(
+            {
+                transactionPromise: approve(
+                    await getRealContract(farm.stakedToken.address, wallet.ethereum, erc20ABI),
+                    farmAddress,
+                    new toBN(2).pow(toBN(256)).sub(toBN('1')), // max uint 256 (2**256)-1 to account for the zero offset
+                    wallet
+                ),
+                successMessage: 'Success!',
+                enqueueSnackbar
             }
-        }
-    }, [amount]);
-
-    const handleApprove = async () => {
-        if (amount === 0) {
-            return;
-        }
-        setApproving(true);
-        // approve farm spend
-        const realTokenContract = await getRealContract(
-            stakedTokenAddress,
-            wallet && wallet.status === "connected" ? wallet.ethereum : rpcUrl,
-            erc20ABI
-        );
-
-        approve(realTokenContract, farmAddress, toWei(amount.toString()), wallet).then((txHash) => {
-            enqueueSnackbar(`Approve successful`, {
-                variant: "success",
-                autoHideDuration: 3000,
-                action: <ViewOnExplorerButton txHash={txHash}/>
-            });
-            setApproving(false);
-        });
+        ).catch(error => failed = true)
+        // TODO : find a better way :3 maybe check every 2 seconds for the allowance change
+        if (!failed)
+            await sleep(10000)
+        setBusy(false);
+        updateUserInfos();
     }
 
     return (
-        <Grid container item xs={12} md={3} direction={"column"} style={{margin: '1em'}}>
-            <Grid container justify={"space-between"}>
-                <Typography className={classes.farmFunctionHeader} style={{marginTop: name ? 0 : '1.5em'}}>
-                    {name ? `${name}:` : ''}
-                </Typography>
-                <Typography className={classes.farmFunctionHeader}>
-                    {
-                        wallet.status === 'connected' && name &&
-                        <b>{!initUserInfo ? <Skeleton style={{width: '50px'}}
-                                                      animation={"wave"}/> : `${Number(fromWei(value ? value.toString() : '0')).toFixed(5)}`}</b>
-                    }
-                    {
-                        wallet.status !== 'connected' && name &&
-                        ``
-                    }
-                </Typography>
-            </Grid>
+        <CardButton title={'Approve'} onClick={approveFarm} busy={busy} disabled={busy || !userInfo}/>
+    )
 
+}
+
+
+const DepositComponent = ({farm, userInfo}) => {
+    const wallet = useWallet();
+    const {enqueueSnackbar} = useSnackbar();
+    const {updateUserInfos} = useFarms();
+
+
+    const [value, setValue] = useState("0");
+    const [useMax, setUseMax] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [inError, setInError] = useState('');
+
+
+    useEffect(() => {
+        if (!userInfo) return;
+        if (!useMax && Number(value) * 10 ** 18 > Number(userInfo.balance)) {
+            setInError('Exceeded Balance');
+        } else
+            setInError('');
+    }, [value, useMax])
+
+    const handleDeposit = async () => {
+        setBusy(true)
+        let failed = false;
+        await handleTransactionPromise(
             {
-                textField &&
-                <TextField
-                    value={amount}
-                    onChange={(event) => {
-                        const regex = /^[0-9]*\.?[0-9]*$/;
-
-                        if (regex.test(event.target.value)) {
-                            setAmount(event.target.value);
-                        }
-                    }}
-                    variant={"outlined"}
-                    color={"secondary"}
-                />
+                transactionPromise: deposit(
+                    await getRealContract(farmAddress, wallet.ethereum, FarmAbi),
+                    farm.pid,
+                    useMax ? userInfo.balance : toWei(value),
+                    wallet
+                ),
+                successMessage: 'Success!',
+                enqueueSnackbar
             }
+        ).catch(errror => failed = true)
+        if (!failed)
+            await sleep(10000)
+        setBusy(false)
+        setOpen(false)
+        updateUserInfos()
+    }
 
-            {
-                hasApprove &&
-                <Button className={classes.farmFunctionButton} variant={"contained"} color={"secondary"}
-                        disabled={!initUserInfo || approving}
-                        hidden={approvedAmount >= amount}
-                        onClick={handleApprove}
-                >
-                    {approving && <CircularProgress style={{padding: '0.5em', marginRight: '0.2em'}}/>}
-                    {approving ? `Approving` : wallet.status !== 'connected' ? 'Connect Wallet' : 'Approve'}
-                </Button>
+    return (
+        <Grid item xs={12}>
+            <CardButton
+                title={`Deposit (available: ${userInfo.balance ? formatLongNumber(Number(userInfo.balance) / 10 ** 18, 2) : 0} ${farm.name})`}
+                disabled={!(userInfo && Number(userInfo.balance) > 0) || busy}
+                onClick={() => setOpen(true)}
+            />
+            {userInfo &&
+            <AmountDialog
+                title={'Deposit'}
+                value={value}
+                inError={inError}
+                maxAmount={userInfo.balance}
+                setUseMax={setUseMax}
+                setValue={setValue}
+                busy={busy}
+                handleAction={handleDeposit}
+                open={open}
+                setOpen={setOpen}
+            />
             }
-
-            <Button className={classes.farmFunctionButton} variant={"contained"} color={"secondary"}
-                    onClick={() => handleClick(amount, setBusy)} disabled={notEnough || wallet.status !== 'connected'}>
-                {busy && <CircularProgress style={{padding: '0.5em', marginRight: '0.2em'}}/>}
-                {notEnough ? 'Insufficient Funds' : wallet.status !== 'connected' ? 'Connect Wallet' : buttonText}
-            </Button>
         </Grid>
     )
+}
+
+const WithdrawComponent = ({farm, userInfo}) => {
+    const wallet = useWallet();
+    const {enqueueSnackbar} = useSnackbar();
+    const {updateUserInfos} = useFarms();
+
+
+    const [value, setValue] = useState("0");
+    const [useMax, setUseMax] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [inError, setInError] = useState('');
+
+
+    useEffect(() => {
+        if (!userInfo) return;
+        if (!useMax && Number(value) * 10 ** 18 > Number(userInfo.staked)) {
+            setInError('Exceeded Staked Amount');
+        } else
+            setInError('');
+    }, [value, useMax])
+
+    const handleWithdraw = async () => {
+        setBusy(true)
+        let failed = false;
+        await handleTransactionPromise(
+            {
+                transactionPromise: withdraw(
+                    await getRealContract(farmAddress, wallet.ethereum, FarmAbi),
+                    farm.pid,
+                    useMax ? userInfo.staked : toWei(value),
+                    wallet
+                ),
+                successMessage: 'Success!',
+                enqueueSnackbar
+            }
+        ).catch(error => failed = true)
+        if (!failed)
+            await sleep(10000)
+        setBusy(false)
+        setOpen(false)
+        updateUserInfos()
+    }
+
+    return (
+        <Grid item xs={6} style={{paddingLeft: 6}}>
+            <CardButton
+                title={'Withdraw'}
+                disabled={!(userInfo && Number(userInfo.staked) > 0) || busy}
+                onClick={() => setOpen(true)}
+            />
+            {userInfo &&
+            <AmountDialog
+                title={'Withdraw'}
+                value={value}
+                inError={inError}
+                maxAmount={userInfo.staked}
+                setUseMax={setUseMax}
+                setValue={setValue}
+                busy={busy}
+                handleAction={handleWithdraw}
+                open={open}
+                setOpen={setOpen}
+            />}
+        </Grid>
+    )
+}
+
+const ClaimComponent = ({farm, useInfo}) => {
+    const wallet = useWallet();
+    const {updateUserInfos} = useFarms();
+    const [busy, setBusy] = useState(false);
+    const {enqueueSnackbar} = useSnackbar();
+
+    const handleHarvest = async () => {
+        setBusy(true);
+        let failed = false;
+        await handleTransactionPromise(
+            {
+                transactionPromise: harvest(
+                    await getRealContract(farmAddress, wallet.ethereum, FarmAbi),
+                    farm.pid,
+                    wallet
+                ),
+                successMessage: 'Success! Your $GAX will show in your balance shortly',
+                enqueueSnackbar
+            }
+        ).catch(error => failed = true)
+        if (!failed)
+            await sleep(10000)
+        setBusy(false)
+        updateUserInfos();
+    };
+
+    return (
+        <Grid item xs={6} style={{paddingRight: 6}}>
+            <CardButton
+                title={'Harvest'}
+                disabled={!(useInfo && Number(useInfo.pending) > 0) || busy}
+                busy={busy}
+                onClick={handleHarvest}
+            />
+        </Grid>
+    )
+}
+
+const StatTextEntry = ({description, value, loading}) => {
+    return (
+        <>
+            <Grid item xs={6} style={{textAlign: "left"}}>
+                {description}
+            </Grid>
+            <Grid item xs={6} style={{textAlign: "right"}}>
+                <b>{loading ? <Skeleton animation="wave"/>
+                    : value}</b>
+            </Grid>
+        </>
+    )
+}
+
+const CardButton = ({title, disabled, busy, onClick}) => {
+    const wallet = useWallet();
+    const {enqueueSnackbar} = useSnackbar();
+
+    const handleConnect = () => {
+        if (wallet)
+            wallet.connect();
+        else
+            enqueueSnackbar(
+                "No Supported wallet detected 😢",
+                {
+                    variant: "error",
+                    autoHideDuration: 3000,
+                })
+    }
+
+    return <Button
+        disabled={wallet && wallet.status === "connected" && disabled} // ignore disabled when not connected to wallet
+        variant={"contained"}
+        fullWidth
+        color={"secondary"}
+        style={{color: 'black', borderRadius: '2px'}}
+        onClick={wallet && wallet.status === "connected" ? onClick : handleConnect}
+    >
+        {busy && <CircularProgress style={{height: 24, width: 24, marginRight: 6}}/>}
+        {wallet && wallet.status === "connected" ? title : 'Connect Wallet'}
+    </Button>
+}
+
+const AmountDialog = ({title, inError, value, setValue, setUseMax, maxAmount, setOpen, open, handleAction, busy}) => {
+
+    return (
+        <Dialog
+            fullWidth={true}
+            maxWidth={'sm'}
+            open={open}
+            onClose={() => setOpen(false)}
+        >
+            <DialogTitle>
+                <Typography variant={"h4"}>
+                    {title}
+                </Typography>
+            </DialogTitle>
+
+            <DialogContent dividers>
+                <Alert severity={"info"} style={{
+                    marginTop: 6,
+                    marginBottom: 24
+                }}>{`Current Balance: ${formatLongNumber(Number(maxAmount) / 10 ** 18, 2)}`}</Alert>
+                <FormControl error={inError} fullWidth
+                             color={"secondary"}/*className={clsx(classes.margin, classes.textField)}*/
+                             variant="outlined">
+                    <InputLabel>Amount</InputLabel>
+                    <OutlinedInput
+
+                        type={'number'}
+                        fullWidth
+                        value={value}
+                        onChange={(event) => {
+                            setValue(Number(event.target.value) || Number(event.target.value) === 0 ? event.target.value : value);
+                            setUseMax(false)
+                        }}
+                        endAdornment={<InputAdornment position="end">
+                            <Button
+                                onClick={() => {
+                                    setValue('' + (Number(maxAmount) / 10 ** 18))
+                                    setUseMax(true)
+                                }}
+                            >
+                                Use Max
+                            </Button>
+                        </InputAdornment>}
+                        labelWidth={64}
+                    />
+
+                </FormControl>
+                {inError && <Alert severity={"error"} style={{marginTop: 6, marginBottom: 6}}>{inError}</Alert>}
+                <Grid container spacing={2} style={{marginTop: 6}}>
+                    <Grid item xs={6}>
+                        <Button
+                            variant={"contained"}
+                            fullWidth color={"secondary"}
+                            disabled={busy || inError}
+                            onClick={handleAction}
+                        >
+                            {busy && <CircularProgress style={{height: 24, width: 24, marginRight: 6}}/>}
+                            {title}
+                        </Button>
+                    </Grid>
+                    <Grid item xs={6}>
+                        <Button
+                            variant={"contained"}
+                            fullWidth
+                            disabled={busy}
+                            onClick={() => setOpen(false)}
+                        >
+                            Cancel
+                        </Button>
+                    </Grid>
+                </Grid>
+
+
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+// functions
+const handleTransactionPromise = async ({transactionPromise, successMessage, enqueueSnackbar}) => {
+    let tx;
+    try {
+        tx = await transactionPromise;
+        const receipt = await waitForTransaction(tx);
+
+        if (receipt.status) {
+            // transaction mined and did not revert
+            enqueueSnackbar(
+                successMessage,
+                {
+                    variant: "success",
+                    autoHideDuration: 4000,
+                    action: <ViewOnExplorerButton txHash={tx}/>,
+                }
+            )
+        } else {
+            // transaction mined and did revert
+            enqueueSnackbar(
+                "Transaction Reverted 😢",
+                {
+                    variant: "error",
+                    autoHideDuration: 3000,
+                    action: <ViewOnExplorerButton txHash={tx}/>
+                })
+        }
+    } catch (error) {
+        enqueueSnackbar(
+            error.message,
+            {
+                variant: "error",
+                autoHideDuration: 3000,
+                action: <ViewOnExplorerButton txHash={tx}/>
+            })
+    }
 }
 
 export default Farm;
