@@ -4,7 +4,7 @@ const farmConfigs = [
         "composition": "mGLXY = GLXY (50%) / WMATIC + USDT + USDC + LINK + CRV (50%)",
         "pid": 0,
         "tags": "GALAXY,GLXY,MATIC,USDT,USDC,LINK,CRV",
-        buyLink: "https://quickswap.exchange/#/add/ETH/0xC8A5BCb5D53CD824497b5381b592Bb747d6D27b3"
+        buyLink: "https://polygon.balancer.fi/#/pool/0xb70c25d96ef260ea07f650037bf68f5d6583885e000100000000000000000048"
     },
     {
         "name": "GLXY",
