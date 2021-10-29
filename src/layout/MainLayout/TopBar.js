@@ -19,7 +19,7 @@ import {chainId} from '../../utils/config';
 import {User} from "react-feather";
 import {useSnackbar} from 'notistack';
 import Logo from "../../components/Root/Logo";
-import {galaxyAddress, gaxAddress, usdcAddress, glxyPoolId} from "../../utils/config";
+import {galaxyAddress, gaxAddress, usdcAddress} from "../../utils/config";
 import {getPriceOfGalaxy, getPriceOfGAX, getPriceOnBalancerForSinglePool} from "../../utils/price-utils";
 
 const drawerWidth = 240;
@@ -120,7 +120,7 @@ const TopBar = ({className, ...rest}) => {
 
     useEffect(() => {
         if (!galaxyPrice && chainId === 137) {
-            getPriceOfGalaxy(glxyPoolId).then((res) => {
+            getPriceOfGalaxy().then((res) => {
                 setGalaxyPrice(res);
             });
         }
