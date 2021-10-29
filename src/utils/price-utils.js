@@ -1,4 +1,4 @@
-import {rpcUrl, balancerVaultAddress, galaxyAddress, gaxLPAddress, usdcAddress, quickswapRouterAddress, maticUsdc} from './config';
+import {rpcUrl, balancerVaultAddress, galaxyAddress, gaxLPAddress, usdcAddress, quickswapRouterAddress, maticUsdc, glxyPoolId} from './config';
 import {balancerVaultAbi} from "./abi/balancer-vault-abi";
 import {univ2LpAbi} from "./abi/univ2-lp-abi";
 import {univ2RouterAbi} from "./abi/univ2-router-abi";
@@ -9,10 +9,10 @@ const Big = require('big-js');
 
 const {fromWei, toWei} = web3.utils;
 
-export const getPriceOfGalaxy = async (poolId) => {
+export const getPriceOfGalaxy = async () => {
     const vaultContract = new web3.eth.Contract(balancerVaultAbi, balancerVaultAddress);
 
-    const poolTokens = await vaultContract.methods.getPoolTokens(poolId).call();
+    const poolTokens = await vaultContract.methods.getPoolTokens(glxyPoolId).call();
 
     let usdcBalance;
     let galaxyBalance;

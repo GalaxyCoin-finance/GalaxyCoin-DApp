@@ -1,5 +1,5 @@
 import {getBalance, getName, getSymbol, getTokenIconUri, getTotalSupply} from "./erc20-core";
-import farmConfigs from "../utils/farmConfigs.js";
+import {farmConfigs, getAPYForPID} from "../utils/farmConfigs.js";
 
 const {rpcUrl, chainId} = require('./config.js');
 const Web3 = require('web3');
@@ -86,32 +86,32 @@ export const getFarms = async (farmContract, ethereum) => {
         const blocksPerWeek = WEEK_SECONDS / averageBlockTime;
         const totalRewardsPerWeek = blocksPerWeek * poolDistPerBlock;
 
-        if (pool.stakedAmount === '0')
-            pool.stakedAmount = '1'
-        const apy = (new Big(totalRewardsPerWeek).times(52.1775).div(Number(pool.stakedAmount)).times(100))  // roughly 53 weeks a year
+        const apy = await getAPYForPID(i, pool, totalRewardsPerWeek);
 
         const farmInfo = findFarmInfo(i);
 
-        pools.push(
-            {
-                pid: i,
-                name: farmInfo.name,
-                composition: farmInfo.composition,
-                buyLink: farmInfo.buyLink,
-                stakedToken: {
-                    address: pool.lpToken,
-                    symbol: await getSymbol(realErc20),
-                    name: await getName(realErc20),
-                    icon: getTokenIconUri(pool.lpToken)
-                },
-                allocationPoints: pool.allocPoint,
-                lastRewardBlock: pool.lastRewardBlock,
-                accBEP20PerShare: pool.accBEP20PerShare,
-                totalStaked: pool.stakedAmount,
-                totalRewardsPerWeek,
-                apy: apy
-            }
-        )
+        if(farmInfo) {
+            pools.push(
+                {
+                    pid: i,
+                    name: farmInfo.name,
+                    composition: farmInfo.composition,
+                    buyLink: farmInfo.buyLink,
+                    stakedToken: {
+                        address: pool.lpToken,
+                        symbol: await getSymbol(realErc20),
+                        name: await getName(realErc20),
+                        icon: getTokenIconUri(pool.lpToken)
+                    },
+                    allocationPoints: pool.allocPoint,
+                    lastRewardBlock: pool.lastRewardBlock,
+                    accBEP20PerShare: pool.accBEP20PerShare,
+                    totalStaked: pool.stakedAmount,
+                    totalRewardsPerWeek,
+                    apy: apy
+                }
+            )
+        }
     }
     return pools.sort((a, b) => {
         return new Big(b.allocationPoints).minus(new Big(a.allocationPoints))
@@ -187,14 +187,6 @@ export const deposit = async (farmContract, pid, amount, wallet) => {
 }
 
 // helper functions
-const getGaxValue = async (uniLikePairERC20Contract, realERC20Contract) => {
-    const gaxBalance = await getBalance(realERC20Contract, uniLikePairERC20Contract.options.address);
-    const totalSupply = await getTotalSupply(uniLikePairERC20Contract);
-
-    // pool has 50% VOl and 50% BNB
-    return Number(gaxBalance) * 2 / Number(totalSupply);
-}
-
 function findFarmInfo(pid) {
     for (let i = 0; i < farmConfigs.length; i++) {
         if (farmConfigs[i].pid === pid)
