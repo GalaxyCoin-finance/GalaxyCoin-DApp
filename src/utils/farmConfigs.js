@@ -9,7 +9,7 @@ const Web3 = require('web3');
 const web3 = new Web3(rpcUrl);
 const {fromWei} = web3.utils;
 
-const farmConfigs = [
+export const farmConfigs = [
     {
         "name": "mGLXY",
         "composition": "mGLXY = GLXY (50%) / WMATIC + USDT + USDC + LINK + CRV (50%)",
@@ -95,7 +95,7 @@ const farmConfigs = [
  * @param totalRewardsPerWeek
  * @returns {Promise<number>}
  */
-const getAPYForPID = async (pid, pool, totalRewardsPerWeek) => {
+export const getAPYForPID = async (pid, pool, totalRewardsPerWeek) => {
 
     for (let i = 0; i < farmConfigs.length; i++) {
         if (farmConfigs[i].pid === pid) {
@@ -124,8 +124,3 @@ const getAPYForPID = async (pid, pool, totalRewardsPerWeek) => {
         }
     }
 }
-
-module.exports = {
-    farmConfigs,
-    getAPYForPID
-};
