@@ -1,11 +1,10 @@
-import {getBalance, getName, getSymbol, getTokenIconUri, getTotalSupply} from "./erc20-core";
+import {getName, getSymbol, getTokenIconUri} from "./erc20-core";
 import {farmConfigs, getAPYForPID} from "../utils/farmConfigs.js";
 
 const {rpcUrl, chainId} = require('./config.js');
 const Web3 = require('web3');
 const Big = require('big.js');
 const {erc20ABI} = require('../utils/abi/erc20-abi');
-const YEAR_SECONDS = 31536000;
 const WEEK_SECONDS = 604800;
 
 let web3 = new Web3(rpcUrl);
