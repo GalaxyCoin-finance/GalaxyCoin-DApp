@@ -1,4 +1,5 @@
 import {getBalance, getName, getSymbol, getTokenIconUri, getTotalSupply} from "./erc20-core";
+import farmConfigs from "../utils/farmConfigs.js";
 
 const {rpcUrl, chainId} = require('./config.js');
 const Web3 = require('web3');
@@ -40,19 +41,20 @@ export const getRewardToken = async (farmContract) => {
     return await farmContract.methods.erc20();
 }
 
-export const getCurrentBlock = async () => {
-    return await web3.eth.getBlockNumber();
+export const getCurrentBlock = async (web3Arg) => {
+    return web3Arg ? await web3Arg.eth.getBlockNumber() : await web3.eth.getBlockNumber();
 }
 
 /**
  *
  * @returns {Promise<number>} average time is seconds
  */
-export const getAverageBlockTime = async () => {
+export const getAverageBlockTime = async (web3Args) => {
     // we average the future bloc time based on the average bloc time in the last one million block
-    const currentBlock = await getCurrentBlock();
-    const pastBlockTime = (await web3.eth.getBlock(currentBlock - 1000000)).timestamp;
-    const currentBlockTime = (await web3.eth.getBlock(currentBlock)).timestamp;
+    web3Args = web3Args ? web3Args : web3;
+    const currentBlock = await getCurrentBlock(web3Args);
+    const pastBlockTime = (await web3Args.eth.getBlock(currentBlock - 1000000)).timestamp;
+    const currentBlockTime = (await web3Args.eth.getBlock(currentBlock)).timestamp;
     return (currentBlockTime - pastBlockTime) / 1000000
 }
 
@@ -80,17 +82,22 @@ export const getFarms = async (farmContract, ethereum) => {
         const realErc20 = await getRealContract(pool.lpToken, ethereum, erc20ABI);
 
         const poolDistPerBlock = (Number(pool.allocPoint) / Number(totalAllocPoints)) * Number(rewardsPerBlock);
-        const averageBlockTime = await getAverageBlockTime();
+        const averageBlockTime = await getAverageBlockTime(await getRealProvider(ethereum));
         const blocksPerWeek = WEEK_SECONDS / averageBlockTime;
         const totalRewardsPerWeek = blocksPerWeek * poolDistPerBlock;
 
-        if(pool.stakedAmount === '0')
+        if (pool.stakedAmount === '0')
             pool.stakedAmount = '1'
         const apy = (new Big(totalRewardsPerWeek).times(52.1775).div(Number(pool.stakedAmount)).times(100))  // roughly 53 weeks a year
+
+        const farmInfo = findFarmInfo(i);
 
         pools.push(
             {
                 pid: i,
+                name: farmInfo.name,
+                composition: farmInfo.composition,
+                buyLink: farmInfo.buyLink,
                 stakedToken: {
                     address: pool.lpToken,
                     symbol: await getSymbol(realErc20),
@@ -186,4 +193,30 @@ const getGaxValue = async (uniLikePairERC20Contract, realERC20Contract) => {
 
     // pool has 50% VOl and 50% BNB
     return Number(gaxBalance) * 2 / Number(totalSupply);
+}
+
+function findFarmInfo(pid) {
+    for (let i = 0; i < farmConfigs.length; i++) {
+        if (farmConfigs[i].pid === pid)
+            return farmConfigs[i];
+    }
+
+    return undefined;
+}
+
+export const waitForTransaction = async (pendingTxHash) => {
+    return new Promise(async (resolve, reject) => {
+        let receipt;
+        do {
+            await sleep(2200); // this will be roughly one block on Polygon main net
+            receipt = await web3.eth.getTransactionReceipt(pendingTxHash);
+        } while (!receipt)
+        await sleep(4000); // lets wait for 2 more blocks to comfirm
+        resolve(receipt)
+    })
+}
+
+
+export function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }

@@ -58,8 +58,8 @@ const themesOptions = [
                 main: "#80102a"
             },
             specific: {
-                farmBackground: "#122454",
-                farmBackgroundTo: "#21266d",
+                farmBackground: "#12245499",
+                farmBackgroundTo: "#21266dee",
                 farmCardBorder: "#2f8db3"
             },
             text: {
