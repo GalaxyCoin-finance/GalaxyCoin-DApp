@@ -97,13 +97,16 @@ export const farmConfigs = [
  */
 export const getAPYForPID = async (pid, pool, totalRewardsPerWeek) => {
 
+    const priceOfGlxy = await getPriceOfGalaxy();
+    const priceOfGax = await getPriceOfGAX();
+
     for (let i = 0; i < farmConfigs.length; i++) {
         if (farmConfigs[i].pid === pid) {
-            let price = new Big(await getPriceOfGAX());
+            let price = new Big(priceOfGax);
             const priceOfRewardsPerWeek = new Big(totalRewardsPerWeek*10**-18).times(price);
 
             if(farmConfigs[i].tags.includes('GLXY')) {
-                price = new Big(await getPriceOfGalaxy());
+                price = new Big(priceOfGlxy);
             }
 
             const weight = farmConfigs[i].percentage;
