@@ -1,8 +1,10 @@
 import Page from "../../components/Root/Page";
-import {Box, Button, Card, Container, Grid, makeStyles, Typography} from "@material-ui/core";
+import {Box, Card, Container, Grid, makeStyles, Typography} from "@material-ui/core";
 import Farm from "../../components/Farms/Farm";
 import useFarms from "../../hooks/useFarms";
-import LoadingScreen from "../../components/Root/LoadingScreen";
+import {farmConfigs} from "../../utils/farmConfigs";
+import {SingleFarmProvider} from "../../contexts/SingleFarmContext";
+import React, {useEffect, useState} from "react";
 
 const styles = makeStyles((theme) => ({
     root: {
@@ -77,8 +79,32 @@ const styles = makeStyles((theme) => ({
 
 const LandingPage = () => {
     const classes = styles();
+    const [farmObjects, setFarmObjects] = useState([]);
+    const [sorted, setsorted] = useState(farmConfigs);
+    const [sortFunction, setSortFunction] = useState('default');
 
-    const {farms, userInfo, initFarms, updateUserInfos} = useFarms();
+    const {globalFarmStats, isInitGlobalStatsLoaded, farms} = useFarms();
+
+    useEffect(() => {
+        setsorted(
+            [...farms]/*.sort((a, b) => Number(b.apy) - Number(a.apy))*/
+        )
+    }, [farms]);
+
+
+    useEffect(() => {
+        setFarmObjects(
+            farmConfigs.map(farm => {
+                return (<SingleFarmProvider pid={farm.pid} key={farm.name}>
+                    <Farm
+                        expandable
+                    />
+                </SingleFarmProvider>)
+            })
+        );
+
+    }, []);
+
 
     const handleToPharo = () => {
         window.open('https://www.pharo.tech/', '_blank');
@@ -91,7 +117,7 @@ const LandingPage = () => {
     return (
         <Page
             className={classes.root}
-            title={'Home'}
+            title={'Farms'}
         >
             <Container className={classes.contentBackground} maxWidth={"lg"}>
 
@@ -111,24 +137,9 @@ const LandingPage = () => {
                     </Typography>
 
                     {
-                        !farms &&
-                        <LoadingScreen transparent/>
-                    }
-
-                    {
-                        farms && farms.length > 0 &&
-                        farms.map((farm, index) => {
-                            if (farm.allocationPoints > 0)
-                                return (
-                                    <Farm
-                                        expandable
-                                        key={farm.name}
-                                        // farm info
-                                        farm={farm}
-                                        // user info
-                                        userInfo={userInfo ? userInfo[index] : null}
-                                    />
-                                )
+                        sorted.map((farm, index) => {
+                            if (farm.active)
+                                return farmObjects[farm.pid];
                         })
                     }
                 </Grid>

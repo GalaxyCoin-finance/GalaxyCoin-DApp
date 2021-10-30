@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React from 'react';
 import {create} from 'jss';
 import rtl from 'jss-rtl';
 import MomentUtils from '@date-io/moment';
@@ -13,6 +13,7 @@ import {HashRouter} from 'react-router-dom';
 import MainLayout from "./layout/MainLayout";
 import Background from "./components/Root/Background";
 import {FarmsProvider} from "./contexts/FarmsContext";
+import {PricesProvider} from "./contexts/PricesContext";
 
 const jss = create({plugins: [...jssPreset().plugins, rtl()]});
 
@@ -46,17 +47,19 @@ const App = () => {
                         dense
                         maxSnack={3}
                     >
-                        <FarmsProvider>
-                            <HashRouter>
-                                <GlobalStyles/>
-                                <div className={classes.background}>
-                                    <Background/>
-                                </div>
-                                <MainLayout>
-                                    {renderRoutes(routes)}
-                                </MainLayout>
-                            </HashRouter>
-                        </FarmsProvider>
+                        <PricesProvider>
+                            <FarmsProvider>
+                                <HashRouter>
+                                    <GlobalStyles/>
+                                    <div className={classes.background}>
+                                        <Background/>
+                                    </div>
+                                    <MainLayout>
+                                        {renderRoutes(routes)}
+                                    </MainLayout>
+                                </HashRouter>
+                            </FarmsProvider>
+                        </PricesProvider>
                     </SnackbarProvider>
                 </MuiPickersUtilsProvider>
             </StylesProvider>
