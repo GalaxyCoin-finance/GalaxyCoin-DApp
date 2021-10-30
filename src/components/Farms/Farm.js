@@ -1,5 +1,4 @@
 import {
-    Box,
     Button,
     CircularProgress,
     Collapse,
@@ -12,7 +11,6 @@ import {
     InputLabel,
     makeStyles,
     OutlinedInput,
-    TextField,
     Typography
 } from "@material-ui/core";
 import React, {useEffect, useState} from "react";
@@ -20,19 +18,19 @@ import {formatLongNumber} from "../../utils/general-utils";
 import {Alert, Skeleton} from "@material-ui/lab";
 import {useWallet} from "use-wallet";
 import {approve} from "../../utils/erc20-core";
-import {deposit, getRealContract, harvest, sleep, waitForTransaction, withdraw} from "../../utils/farm-core";
-import {farmAddress, rpcUrl, explorer} from "../../utils/config.js";
+import {deposit, getRealContract, harvest, waitForTransaction, withdraw} from "../../utils/farm-core";
+import {farmAddress, explorer} from "../../utils/config.js";
 import {useSnackbar} from "notistack";
 import {erc20ABI} from "../../utils/abi/erc20-abi";
 import {FarmAbi} from "../../utils/abi/farm-abi";
-import useFarms from "../../hooks/useFarms";
 import {fromWei, toBN, toWei} from "web3-utils";
+import useSingleFarm from "../../hooks/useSingleFarm";
 
 const styles = makeStyles((theme) => ({
     farmBackground: {
         backgroundImage: `linear-gradient(to bottom right, ${theme.palette.specific.farmBackground}, ${theme.palette.specific.farmBackgroundTo})`,
         borderRadius: 12,
-        marginBottom: '2em',
+        marginBottom: '1em',
         borderBottom: `4px solid ${theme.palette.secondary.light}`,
     },
     farmName: {
@@ -113,20 +111,16 @@ export const ViewOnExplorerButton = ({txHash}) => {
 }
 
 
-const Farm = ({
-                  expandable,
-                  farm,
-                  userInfo
-              }) => {
+const Farm = ({expandable}) => {
     const classes = styles();
 
-    const [formattedAPY, setFormattedAPY] = useState(0);
+    const {farm, userInfo, updateUserInfo, updateFarmInfo} = useSingleFarm();
     const [open, setOpen] = useState(false);
 
-    useEffect(() => {
-        let dum = formatLongNumber(farm.apy, 2);
-        setFormattedAPY(dum);
-    }, []);
+    const updateInfos = () => {
+        updateUserInfo(true);
+        updateFarmInfo(true);
+    }
 
     const toggleCollapse = () => {
         setOpen(!open);
@@ -146,14 +140,14 @@ const Farm = ({
                 </Typography>
             </Grid>
 
-            <Grid container justify={"space-between"} style={{padding: '2em', paddingTop: 0, paddingBottom: 0}}>
+            <Grid container justify={"space-between"} style={{padding: '1em', paddingTop: 0, paddingBottom: 0}}>
                 {/*LP Wallet Balance*/}
                 <Grid item xs={12} md={3}>
                     <Typography className={classes.farmInfoHeading}>
                         APY
                     </Typography>
                     <Typography className={classes.farmInfoText}>
-                        {farm.apy ? formattedAPY : 0}%
+                        {farm.apy ? formatLongNumber(farm.apy, 2) : <Skeleton animation={"wave"}/>}%
                     </Typography>
 
                 </Grid>
@@ -199,14 +193,17 @@ const Farm = ({
             {
                 expandable && open &&
                 <Collapse in={open} style={{width: '100%'}}>
-                    <Grid container justify={"space-evenly"} direction={"row"} style={{padding: '2em', paddingTop: 0}}>
-                        <ClaimComponent farm={farm} useInfo={userInfo}/>
-                        <WithdrawComponent farm={farm} userInfo={userInfo}/>
+                    <Grid container justify={"space-evenly"} direction={"row"} style={{padding: '1em', paddingTop: 0}}>
+                        <ClaimComponent/>
+                        <WithdrawComponent/>
                         <VDiv/>
                         {userInfo && Number(userInfo.allowance) > Number(userInfo.balance) ?
-                            <DepositComponent farm={farm} userInfo={userInfo}/> :
-                            <ApproveComponent farm={farm} userInfo={userInfo}/>
+                            <DepositComponent/> :
+                            <ApproveComponent/>
                         }
+                        <Typography className={classes.farmComposition}>
+                            <p  style={{color: 'yellow', cursor: "pointer", textDecoration: 'underline'}} onClick={updateInfos}> Refresh </p>
+                        </Typography>
                     </Grid>
                 </Collapse>
             }
@@ -225,11 +222,12 @@ const Farm = ({
 
 const VDiv = () => <Grid item xs={12} style={{minHeight: 16}}/>
 
-const ApproveComponent = ({farm, userInfo}) => {
+export const ApproveComponent = () => {
     const wallet = useWallet();
     const {enqueueSnackbar} = useSnackbar();
     const [busy, setBusy] = useState(false);
-    const {updateUserInfos} = useFarms();
+    const [waitingForApproval, setWaitingForApproval] = useState(false);
+    const {updateUserInfo, farm, userInfo, waitForApproval} = useSingleFarm();
 
     const approveFarm = async () => {
         if (!wallet || !wallet.account) return;
@@ -247,24 +245,28 @@ const ApproveComponent = ({farm, userInfo}) => {
                 enqueueSnackbar
             }
         ).catch(error => failed = true)
-        // TODO : find a better way :3 maybe check every 2 seconds for the allowance change
-        if (!failed)
-            await sleep(10000)
+        // TODO :
+        if (!failed) {
+            setWaitingForApproval(true);
+            await waitForApproval();
+            setWaitingForApproval(false);
+        }
         setBusy(false);
-        updateUserInfos();
+        updateUserInfo(true);
     }
 
     return (
-        <CardButton title={'Approve'} onClick={approveFarm} busy={busy} disabled={busy || !userInfo}/>
+        <CardButton title={waitingForApproval ? 'Reading Approval state from Blockchain...' : 'Approve'}
+                    onClick={approveFarm} busy={busy || !userInfo} disabled={busy || !userInfo}/>
     )
 
 }
 
 
-const DepositComponent = ({farm, userInfo}) => {
+export const DepositComponent = () => {
     const wallet = useWallet();
     const {enqueueSnackbar} = useSnackbar();
-    const {updateUserInfos} = useFarms();
+    const {updateUserInfo, farm, userInfo, waitForDepositOrWithdrawal} = useSingleFarm();
 
 
     const [value, setValue] = useState("0");
@@ -272,6 +274,7 @@ const DepositComponent = ({farm, userInfo}) => {
     const [busy, setBusy] = useState(false);
     const [open, setOpen] = useState(false);
     const [inError, setInError] = useState('');
+    const [waitingForNetwork, setWaitingForNetwork] = useState(false);
 
 
     useEffect(() => {
@@ -280,7 +283,7 @@ const DepositComponent = ({farm, userInfo}) => {
             setInError('Exceeded Balance');
         } else
             setInError('');
-    }, [value, useMax])
+    }, [value, useMax]);
 
     const handleDeposit = async () => {
         setBusy(true)
@@ -296,24 +299,27 @@ const DepositComponent = ({farm, userInfo}) => {
                 successMessage: 'Success!',
                 enqueueSnackbar
             }
-        ).catch(errror => failed = true)
-        if (!failed)
-            await sleep(10000)
+        ).catch(error => failed = true)
+        if (!failed) {
+            setWaitingForNetwork(true);
+            await waitForDepositOrWithdrawal();
+            setWaitingForNetwork(false);
+        }
         setBusy(false)
         setOpen(false)
-        updateUserInfos()
+        updateUserInfo(true);
     }
 
     return (
         <Grid item xs={12}>
             <CardButton
-                title={`Deposit (available: ${userInfo.balance ? formatLongNumber(Number(userInfo.balance) / 10 ** 18, 2) : 0} ${farm.name})`}
+                title={waitingForNetwork ? 'Reading On Chain Data...' : `Stake (available: ${userInfo.balance ? formatLongNumber(Number(userInfo.balance) / 10 ** 18, 2) : 0} ${farm.name})`}
                 disabled={!(userInfo && Number(userInfo.balance) > 0) || busy}
                 onClick={() => setOpen(true)}
             />
             {userInfo &&
             <AmountDialog
-                title={'Deposit'}
+                title={waitingForNetwork ? 'Reading On Chain Data...' : 'Stake'}
                 value={value}
                 inError={inError}
                 maxAmount={userInfo.balance}
@@ -329,10 +335,10 @@ const DepositComponent = ({farm, userInfo}) => {
     )
 }
 
-const WithdrawComponent = ({farm, userInfo}) => {
+export const WithdrawComponent = () => {
     const wallet = useWallet();
     const {enqueueSnackbar} = useSnackbar();
-    const {updateUserInfos} = useFarms();
+    const {updateUserInfo, farm, userInfo, waitForDepositOrWithdrawal} = useSingleFarm();
 
 
     const [value, setValue] = useState("0");
@@ -340,6 +346,7 @@ const WithdrawComponent = ({farm, userInfo}) => {
     const [busy, setBusy] = useState(false);
     const [open, setOpen] = useState(false);
     const [inError, setInError] = useState('');
+    const [waitingForNetwork, setWaitingForNetwork] = useState(false);
 
 
     useEffect(() => {
@@ -365,23 +372,26 @@ const WithdrawComponent = ({farm, userInfo}) => {
                 enqueueSnackbar
             }
         ).catch(error => failed = true)
-        if (!failed)
-            await sleep(10000)
-        setBusy(false)
-        setOpen(false)
-        updateUserInfos()
+        if (!failed) {
+            setWaitingForNetwork(true);
+            await waitForDepositOrWithdrawal();
+            setWaitingForNetwork(false);
+        }
+        setBusy(false);
+        setOpen(false);
+        updateUserInfo(true);
     }
 
     return (
         <Grid item xs={6} style={{paddingLeft: 6}}>
             <CardButton
-                title={'Withdraw'}
+                title={waitingForNetwork ? 'Reading On Chain Data...' : `Unstake (${userInfo && userInfo.staked ? formatLongNumber(Number(userInfo.staked) / 10 ** 18, 2) : 0})`}
                 disabled={!(userInfo && Number(userInfo.staked) > 0) || busy}
                 onClick={() => setOpen(true)}
             />
             {userInfo &&
             <AmountDialog
-                title={'Withdraw'}
+                title={waitingForNetwork ? 'Reading On Chain Data...' : 'Unstake'}
                 value={value}
                 inError={inError}
                 maxAmount={userInfo.staked}
@@ -396,11 +406,12 @@ const WithdrawComponent = ({farm, userInfo}) => {
     )
 }
 
-const ClaimComponent = ({farm, useInfo}) => {
+export const ClaimComponent = () => {
     const wallet = useWallet();
-    const {updateUserInfos} = useFarms();
+    const {updateUserInfo, farm, userInfo, waitForClaim} = useSingleFarm();
     const [busy, setBusy] = useState(false);
     const {enqueueSnackbar} = useSnackbar();
+    const [waitingForNetwork, setWaitingForNetwork] = useState(false);
 
     const handleHarvest = async () => {
         setBusy(true);
@@ -415,36 +426,27 @@ const ClaimComponent = ({farm, useInfo}) => {
                 successMessage: 'Success! Your $GAX will show in your balance shortly',
                 enqueueSnackbar
             }
-        ).catch(error => failed = true)
-        if (!failed)
-            await sleep(10000)
-        setBusy(false)
-        updateUserInfos();
+        ).catch(error => failed = true);
+
+        if (!failed) {
+            setWaitingForNetwork(true);
+            await waitForClaim();
+            setWaitingForNetwork(false);
+        }
+
+        setBusy(false);
+        updateUserInfo(true);
     };
 
     return (
         <Grid item xs={6} style={{paddingRight: 6}}>
             <CardButton
-                title={'Harvest'}
-                disabled={!(useInfo && Number(useInfo.pending) > 0) || busy}
+                title={waitingForNetwork ? 'Reading On Chain Data...' : `Harvest (${userInfo && userInfo.pending ? formatLongNumber(Number(userInfo.pending) / 10 ** 18, 2) : 0})`}
+                disabled={!(userInfo && Number(userInfo.pending) > 0) || busy}
                 busy={busy}
                 onClick={handleHarvest}
             />
         </Grid>
-    )
-}
-
-const StatTextEntry = ({description, value, loading}) => {
-    return (
-        <>
-            <Grid item xs={6} style={{textAlign: "left"}}>
-                {description}
-            </Grid>
-            <Grid item xs={6} style={{textAlign: "right"}}>
-                <b>{loading ? <Skeleton animation="wave"/>
-                    : value}</b>
-            </Grid>
-        </>
     )
 }
 
@@ -590,6 +592,7 @@ const handleTransactionPromise = async ({transactionPromise, successMessage, enq
                 autoHideDuration: 3000,
                 action: <ViewOnExplorerButton txHash={tx}/>
             })
+        throw 'error';
     }
 }
 

@@ -48,7 +48,8 @@ export const getPriceOfGAX = async () => {
     const maticUsdcQuote = await uniV2RouterContract.methods.quote(toWei("1"), reservesM_U._reserve0, reservesM_U._reserve1).call();
     const priceMatic = maticUsdcQuote*10**-6;
 
-    return (priceGAXPerMatic/priceMatic).toFixed(6).toString();
+
+    return (priceGAXPerMatic*priceMatic).toFixed(6).toString();
 }
 
 

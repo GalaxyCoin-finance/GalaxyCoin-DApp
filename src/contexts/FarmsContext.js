@@ -1,94 +1,100 @@
 import React, {createContext, useEffect, useState} from 'react';
 import {useWallet} from "use-wallet";
-import {getFarms, getPending, getRealContract, getStaked} from "../utils/farm-core";
-import {getAllowance, getBalance} from "../utils/erc20-core";
+import {
+    getFarms,
+    getRealContract, getRealProvider,
+    getRewardsPerBlock,
+    getTotalAllocPoints
+} from "../utils/farm-core";
+import {farmConfigs} from "../utils/farmConfigs";
+import usePrices from "../hooks/usePrices";
 
 const {farmAddress, rpcUrl} = require('../utils/config.js');
 const {FarmAbi} = require('../utils/abi/farm-abi');
-const {erc20ABI} = require('../utils/abi/erc20-abi');
+
 const FarmsContext = createContext({
-    farms: null,
-    userInfo: null,
-    initFarms: null,
-    updateUserInfos: null,
+    globalFarmStats: null,
+    initGlobalStats: null,
+    isInitGlobalStatsLoaded: false,
+    farms: farmConfigs,
 });
 
 export const FarmsProvider = ({children}) => {
     const wallet = useWallet();
-    const [farms, setFarms] = useState();
-    // TODO: move this to a field on farm
-    // easier to update single farms
-    const [userInfo, setUserInfo] = useState();
+    const pricesProvider = usePrices();
+
+    const [globalFarmStats, setGlobalFarmStats] = useState({
+        totalAllocationPoints: null,
+        rewardsPerBlock: null,
+    });
+    const [isInitGlobalStatsLoaded, setIsInitGlobalStatsLoaded] = useState(false);
+
+    const [farms, setFarms] = useState(farmConfigs);
 
     useEffect(() => {
-        initFarms();
-    }, [wallet.status])
+        if (!isInitGlobalStatsLoaded)
+            setIsInitGlobalStatsLoaded(globalFarmStats.totalAllocationPoints && globalFarmStats.rewardsPerBlock);
+    }, [globalFarmStats]);
 
     useEffect(() => {
-        updateUserInfos();
-    }, [farms]);
-
-    useEffect(() => {
-        setUserInfo(null);
-        updateUserInfos();
-    }, [wallet.account]);
-
-    const updateUserInfos = (background) => {
-        if (!farms)
-            return;
-        if (!background)
-            setUserInfo(null);
-        Promise.all(farms.map(farmInfo => {
-            return updateUserInfoForFarm(farmInfo);
-        })).then(arr => setUserInfo(arr));
-    }
+        if (pricesProvider.loaded)
+            initFarms();
+    }, [pricesProvider.loaded]);
 
     const initFarms = async () => {
-
-        const realFarmContract = await getRealContract(
-            farmAddress,
-            wallet && wallet.status === "connected" ? wallet.ethereum : rpcUrl,
-            FarmAbi
-        )
-
-
         setFarms(
             await getFarms(
-                realFarmContract,
-                wallet && wallet.status === "connected" ? wallet.ethereum : rpcUrl
+                await getRealFarmContract(), wallet && wallet.status === "connected" ? wallet.ethereum : getRealProvider(rpcUrl), await initGlobalStats(), pricesProvider
             )
         )
     }
 
-    const updateUserInfoForFarm = async (farmArg) => {
-        if (!wallet || !wallet.account) return {
-            staked: 0,
-            balance: 0
+    const initGlobalStats = async (withUpdate) => {
+        const realFarmContract = await getRealFarmContract();
+
+        let rewardsPerBlock = globalFarmStats.rewardsPerBlock;
+        if (!globalFarmStats.rewardsPerBlock || withUpdate) {
+            rewardsPerBlock = await getRewardsPerBlock(realFarmContract)
+            setGlobalFarmStats({...globalFarmStats, rewardsPerBlock});
         }
-        const erc20 = await getRealContract(farmArg.stakedToken.address, wallet.ethereum, erc20ABI);
-        const farmContract = await getRealContract(farmAddress, wallet.ethereum, FarmAbi);
 
-        const staked = await getStaked(farmContract, farmArg.pid, wallet.account);
+        let totalAllocationPoints = globalFarmStats.totalAllocationPoints;
+        if (!globalFarmStats.totalAllocationPoints || withUpdate) {
+            totalAllocationPoints = await getTotalAllocPoints(realFarmContract)
+            setGlobalFarmStats({...globalFarmStats, totalAllocationPoints});
+        }
 
-        const myShareRatio = Number(staked) / Number(farmArg.totalStaked);
+        setGlobalFarmStats({
+            ...globalFarmStats,
+            totalAllocationPoints,
+            rewardsPerBlock
+        });
         return {
-            pid: farmArg.pid,
-            staked: staked,
-            balance: await getBalance(erc20, wallet.account),
-            pending: await getPending(farmContract, farmArg.pid, wallet.account),
-            allowance: await getAllowance(erc20, wallet.account, farmAddress),
-            shareRatio: myShareRatio,
-            weeklyRewards: farmArg.totalRewardsPerWeek * myShareRatio
+            rewardsPerBlock,
+            totalAllocationPoints
         }
+    }
+
+    useEffect(() => {
+        initGlobalStats();
+    }, []);
+
+
+    const getRealFarmContract = async () => {
+        return getRealContract(
+            farmAddress,
+            wallet && wallet.status === "connected" ? wallet.ethereum : rpcUrl,
+            FarmAbi
+        )
     }
 
     return (
         <FarmsContext.Provider
             value={{
-                farms,
-                userInfo,
-                initFarms,
-                updateUserInfos
+                globalFarmStats,
+                isInitGlobalStatsLoaded,
+                initGlobalStats,
+                farms
             }}
         >
             {children}
