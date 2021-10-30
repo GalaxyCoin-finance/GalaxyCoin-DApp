@@ -53,9 +53,10 @@ export const getAverageBlockTime = async (web3Args) => {
     web3Args = web3Args ? web3Args : web3;
     const currentBlock = await getCurrentBlock(web3Args);
     const pastBlockTime = (await web3Args.eth.getBlock(currentBlock - 1000000)).timestamp;
-    const currentBlockTime = (await web3Args.eth.getBlock(currentBlock)).timestamp;
-    return (currentBlockTime - pastBlockTime) / 1000000
+    const currentBlockTime = Date.now() / 1000
+    return (currentBlockTime - pastBlockTime) / 1000000;
 }
+
 
 /**
  *
@@ -69,52 +70,41 @@ export const getAverageBlockTime = async (web3Args) => {
  *     stakedAmount: total staked by all users
  * }
  */
-export const getFarms = async (farmContract, ethereum) => {
-    const length = await farmContract.methods.poolLength().call();
-    const pools = [];
+export const getFarms = async (farmContract, ethereum, {rewardsPerBlock, totalAllocationPoints}, pricesProvider) => {
+    const pools = [...farmConfigs];
 
-    const rewardsPerBlock = await getRewardsPerBlock(farmContract);
-    const totalAllocPoints = await getTotalAllocPoints(farmContract);
-
-    for (let i = 0; i < length; i++) {
-        const pool = await farmContract.methods.poolInfo(i).call();
-        const realErc20 = await getRealContract(pool.lpToken, ethereum, erc20ABI);
-
-        const poolDistPerBlock = (Number(pool.allocPoint) / Number(totalAllocPoints)) * Number(rewardsPerBlock);
-        const averageBlockTime = await getAverageBlockTime(await getRealProvider(ethereum));
-        const blocksPerWeek = WEEK_SECONDS / averageBlockTime;
-        const totalRewardsPerWeek = blocksPerWeek * poolDistPerBlock;
-
-        const apy = await getAPYForPID(i, pool, totalRewardsPerWeek);
-
-        const farmInfo = findFarmInfo(i);
-
-        if(farmInfo) {
-            pools.push(
-                {
-                    pid: i,
-                    name: farmInfo.name,
-                    composition: farmInfo.composition,
-                    buyLink: farmInfo.buyLink,
-                    stakedToken: {
-                        address: pool.lpToken,
-                        symbol: await getSymbol(realErc20),
-                        name: await getName(realErc20),
-                        icon: getTokenIconUri(pool.lpToken)
-                    },
-                    allocationPoints: pool.allocPoint,
-                    lastRewardBlock: pool.lastRewardBlock,
-                    accBEP20PerShare: pool.accBEP20PerShare,
-                    totalStaked: pool.stakedAmount,
-                    totalRewardsPerWeek,
-                    apy: apy
-                }
-            )
-        }
+    for (let i = 0; i < farmConfigs.length; i++) {
+        pools[i] = await getFarmDetails({
+            farm: pools[i],
+            rewardsPerBlock,
+            totalAllocPoints: totalAllocationPoints,
+            farmContract,
+            ethereum,
+            pricesProvider
+        });
     }
-    return pools.sort((a, b) => {
-        return new Big(b.allocationPoints).minus(new Big(a.allocationPoints))
-    });
+    return pools;
+}
+
+export const getFarmDetails = async ({farm, rewardsPerBlock, totalAllocPoints, farmContract, ethereum, pricesProvider}) => {
+    let pool = await farmContract.methods.poolInfo(farm.pid).call();
+
+    const poolDistPerBlock = (Number(pool.allocPoint) / Number(totalAllocPoints)) * Number(rewardsPerBlock);
+    const blocksPerWeek = WEEK_SECONDS / 2.370920137000084;
+    const totalRewardsPerWeek = blocksPerWeek * poolDistPerBlock;
+
+    const apy = await getAPYForPID(farm.pid, pool, totalRewardsPerWeek, pricesProvider);
+    return {
+        ...farm,
+        // some legacy functions depend on this we remove when we clear them out
+        lpToken: pool.lpToken,
+        allocationPoints: pool.allocPoint,
+        lastRewardBlock: pool.lastRewardBlock,
+        accBEP20PerShare: pool.accBEP20PerShare,
+        totalStaked: pool.stakedAmount,
+        totalRewardsPerWeek,
+        apy: apy
+    }
 }
 
 export const getStaked = async (farmContract, pid, account) => {
@@ -186,15 +176,6 @@ export const deposit = async (farmContract, pid, amount, wallet) => {
 }
 
 // helper functions
-function findFarmInfo(pid) {
-    for (let i = 0; i < farmConfigs.length; i++) {
-        if (farmConfigs[i].pid === pid)
-            return farmConfigs[i];
-    }
-
-    return undefined;
-}
-
 export const waitForTransaction = async (pendingTxHash) => {
     return new Promise(async (resolve, reject) => {
         let receipt;
