@@ -202,7 +202,7 @@ const Farm = ({expandable}) => {
                             <ApproveComponent/>
                         }
                         <Typography className={classes.farmComposition}>
-                            <p  style={{color: 'yellow', cursor: "pointer"}} onClick={updateInfos}> Refresh </p>
+                            <p  style={{color: 'yellow', cursor: "pointer", textDecoration: 'underline'}} onClick={updateInfos}> Refresh </p>
                         </Typography>
                     </Grid>
                 </Collapse>
