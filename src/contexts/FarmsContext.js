@@ -2,9 +2,12 @@ import React, {createContext, useEffect, useState} from 'react';
 import {useWallet} from "use-wallet";
 import {
     getFarms,
-    getRealContract, getRealProvider,
+    getRealContract,
+    getRealProvider,
     getRewardsPerBlock,
-    getTotalAllocPoints
+    getTotalAllocPoints,
+    isActive,
+    isPaused
 } from "../utils/farm-core";
 import {farmConfigs} from "../utils/farmConfigs";
 import usePrices from "../hooks/usePrices";
@@ -54,7 +57,7 @@ export const FarmsProvider = ({children}) => {
 
         let rewardsPerBlock = globalFarmStats.rewardsPerBlock;
         if (!globalFarmStats.rewardsPerBlock || withUpdate) {
-            rewardsPerBlock = await getRewardsPerBlock(realFarmContract)
+            rewardsPerBlock = await getRewardsPerBlock(realFarmContract);
             setGlobalFarmStats({...globalFarmStats, rewardsPerBlock});
         }
 
@@ -64,10 +67,15 @@ export const FarmsProvider = ({children}) => {
             setGlobalFarmStats({...globalFarmStats, totalAllocationPoints});
         }
 
+        const active = await isActive(realFarmContract);
+        const paused = await isPaused(realFarmContract);
+        console.log(active);
         setGlobalFarmStats({
             ...globalFarmStats,
             totalAllocationPoints,
-            rewardsPerBlock
+            rewardsPerBlock,
+            active,
+            paused
         });
         return {
             rewardsPerBlock,

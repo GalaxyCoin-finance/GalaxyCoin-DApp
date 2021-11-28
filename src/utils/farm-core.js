@@ -1,4 +1,3 @@
-import {getName, getSymbol, getTokenIconUri} from "./erc20-core";
 import {farmConfigs, getAPYForPID} from "../utils/farmConfigs.js";
 
 const {rpcUrl, chainId} = require('./config.js');
@@ -8,6 +7,7 @@ const {erc20ABI} = require('../utils/abi/erc20-abi');
 const WEEK_SECONDS = 604800;
 
 let web3 = new Web3(rpcUrl);
+const {fromWei, BN} = web3.utils;
 
 export const getRealProvider = async (ethereum) => {
     let realProvider;
@@ -112,7 +112,21 @@ export const getStaked = async (farmContract, pid, account) => {
 }
 
 export const getPending = async (farmContract, pid, account) => {
-    return farmContract.methods.pending(pid, account).call();
+    // TODO revert this workaround 
+    /*try {
+        const pending = await farmContract.methods.pending(pid, account).call();
+        return pending;
+    } catch ( error ) { */
+    await sleep(500);
+    const userInfo = await farmContract.methods.userInfo(pid, account).call();
+
+    const poolInfo = await farmContract.methods.poolInfo(pid).call();
+
+    const accERC20PerShare = poolInfo.accERC20PerShare;
+
+    return new BN(userInfo.amount).mul(new BN(accERC20PerShare)).div(new BN('1000000000000000000000000000000000000')).sub(new BN(userInfo.rewardDebt));
+    /*}*/
+
 }
 
 export const getTotalAllocPoints = async (farmContract) => {
@@ -121,6 +135,14 @@ export const getTotalAllocPoints = async (farmContract) => {
 
 export const getRewardsPerBlock = async (farmContract) => {
     return farmContract.methods.rewardPerBlock().call();
+}
+
+export const isPaused = async (farmContract) => {
+    return farmContract.methods.paused().call();
+}
+
+export const isActive = async (farmContract) => {
+    return (await farmContract.methods.endBlock().call()) > (await getCurrentBlock());
 }
 
 // write
@@ -143,6 +165,23 @@ export const harvest = async (farmContract, pid, wallet) => {
 
 export const withdraw = async (farmContract, pid, amount, wallet) => {
     const data = farmContract.methods.withdraw(pid, amount).encodeABI();
+
+    const transactionParams = {
+        nonce: '0x00',
+        to: farmContract.options.address,
+        from: wallet.account,
+        data: data,
+        chainId: chainId
+    }
+
+    return wallet.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [transactionParams]
+    })
+}
+
+export const emergencyWithdrawFromFarm = async (farmContract, pid, wallet) => {
+    const data = farmContract.methods.emergencyWithdraw(pid).encodeABI();
 
     const transactionParams = {
         nonce: '0x00',
