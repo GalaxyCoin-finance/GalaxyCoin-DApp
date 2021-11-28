@@ -1,12 +1,6 @@
 import React, {createContext, useEffect, useState} from 'react';
 import {useWallet} from "use-wallet";
-import {
-    getFarmDetails,
-    getPending,
-    getRealContract,
-    getStaked,
-    sleep
-} from "../utils/farm-core";
+import {getFarmDetails, getPending, getRealContract, getStaked, sleep} from "../utils/farm-core";
 import {getAllowance, getBalance} from "../utils/erc20-core";
 import {farmConfigs} from "../utils/farmConfigs";
 import useFarms from "../hooks/useFarms";
@@ -103,7 +97,7 @@ export const SingleFarmProvider = ({pid, children}) => {
                 pending: await getPending(farmContract, pid, wallet.account),
                 allowance: await getAllowance(erc20, wallet.account, farmAddress),
                 shareRatio: myShareRatio,
-                weeklyRewards: farm.totalRewardsPerWeek * myShareRatio
+                weeklyRewards: farm.totalRewardsPerWeek * myShareRatio,
             }
         }
         setUserInfo(userInfo);

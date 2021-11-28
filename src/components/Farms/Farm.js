@@ -18,13 +18,23 @@ import {formatLongNumber} from "../../utils/general-utils";
 import {Alert, Skeleton} from "@material-ui/lab";
 import {useWallet} from "use-wallet";
 import {approve} from "../../utils/erc20-core";
-import {deposit, getRealContract, harvest, waitForTransaction, withdraw} from "../../utils/farm-core";
-import {farmAddress, explorer} from "../../utils/config.js";
+import {
+    deposit,
+    emergencyWithdrawFromFarm,
+    getRealContract,
+    harvest,
+    sleep,
+    waitForTransaction,
+    withdraw
+} from "../../utils/farm-core";
+import {explorer, farmAddress} from "../../utils/config.js";
 import {useSnackbar} from "notistack";
 import {erc20ABI} from "../../utils/abi/erc20-abi";
 import {FarmAbi} from "../../utils/abi/farm-abi";
 import {fromWei, toBN, toWei} from "web3-utils";
 import useSingleFarm from "../../hooks/useSingleFarm";
+import useFarms from "../../hooks/useFarms";
+import ConfirmDialog from "../Dialogs/ConfirmDialog";
 
 const styles = makeStyles((theme) => ({
     farmBackground: {
@@ -114,6 +124,7 @@ export const ViewOnExplorerButton = ({txHash}) => {
 const Farm = ({expandable}) => {
     const classes = styles();
 
+    const {globalFarmStats, isInitGlobalStatsLoaded, farms} = useFarms();
     const {farm, userInfo, updateUserInfo, updateFarmInfo} = useSingleFarm();
     const [open, setOpen] = useState(false);
 
@@ -201,8 +212,16 @@ const Farm = ({expandable}) => {
                             <DepositComponent/> :
                             <ApproveComponent/>
                         }
+                        {
+                            userInfo && userInfo.staked > 0 && globalFarmStats.paused &&
+                            <>
+                                <VDiv/>
+                                <EnergencyComponent/>
+                            </>
+                        }
                         <Typography className={classes.farmComposition}>
-                            <p  style={{color: 'yellow', cursor: "pointer", textDecoration: 'underline'}} onClick={updateInfos}> Refresh </p>
+                            <p style={{color: 'yellow', cursor: "pointer", textDecoration: 'underline'}}
+                               onClick={updateInfos}> Refresh </p>
                         </Typography>
                     </Grid>
                 </Collapse>
@@ -222,12 +241,67 @@ const Farm = ({expandable}) => {
 
 const VDiv = () => <Grid item xs={12} style={{minHeight: 16}}/>
 
+
+export const EnergencyComponent = () => {
+    const wallet = useWallet();
+    const {enqueueSnackbar} = useSnackbar();
+    const [busy, setBusy] = useState(false);
+    const [waiting, setWaiting] = useState(false);
+    const [open, setOpen] = useState(false);
+    const {updateUserInfo, farm, userInfo, waitForApproval} = useSingleFarm();
+
+
+    const preConfirm = () => {
+        setOpen(true)
+    }
+
+    const emergencyWithdraw = async () => {
+        setOpen(false);
+
+        if (!wallet || !wallet.account) return;
+        setBusy(true);
+        let failed = false;
+        await handleTransactionPromise(
+            {
+                transactionPromise: emergencyWithdrawFromFarm(
+                    await getRealContract(farmAddress, wallet.ethereum, FarmAbi),
+                    farm.pid,
+                    wallet
+                ),
+                successMessage: 'Success!',
+                enqueueSnackbar
+            }
+        ).catch(error => failed = true)
+        // TODO :
+        if (!failed) {
+            setWaiting(true);
+            await sleep(20000); // TODO: actually listen to each block for this change
+            setWaiting(false);
+        }
+        setBusy(false);
+        updateUserInfo(true);
+    }
+
+    return (
+        <>
+            <CardButton title={waiting ? 'Reading state from Blockchain...' : 'Emergency Withdraw'}
+                        onClick={preConfirm} busy={busy || !userInfo} disabled={busy || !userInfo}
+                        style={{marginTop: 8}}/>
+            <ConfirmDialog open={open} setOpen={setOpen} callBack={emergencyWithdraw}/>
+        </>
+
+    )
+
+}
+
+
 export const ApproveComponent = () => {
     const wallet = useWallet();
     const {enqueueSnackbar} = useSnackbar();
     const [busy, setBusy] = useState(false);
     const [waitingForApproval, setWaitingForApproval] = useState(false);
     const {updateUserInfo, farm, userInfo, waitForApproval} = useSingleFarm();
+    const {globalFarmStats} = useFarms();
 
     const approveFarm = async () => {
         if (!wallet || !wallet.account) return;
@@ -257,7 +331,8 @@ export const ApproveComponent = () => {
 
     return (
         <CardButton title={waitingForApproval ? 'Reading Approval state from Blockchain...' : 'Approve'}
-                    onClick={approveFarm} busy={busy || !userInfo} disabled={busy || !userInfo}/>
+                    onClick={approveFarm} busy={busy || !userInfo}
+                    disabled={busy || !userInfo || globalFarmStats.paused || !globalFarmStats.active}/>
     )
 
 }
@@ -267,6 +342,7 @@ export const DepositComponent = () => {
     const wallet = useWallet();
     const {enqueueSnackbar} = useSnackbar();
     const {updateUserInfo, farm, userInfo, waitForDepositOrWithdrawal} = useSingleFarm();
+    const {globalFarmStats} = useFarms();
 
 
     const [value, setValue] = useState("0");
@@ -314,7 +390,7 @@ export const DepositComponent = () => {
         <Grid item xs={12}>
             <CardButton
                 title={waitingForNetwork ? 'Reading On Chain Data...' : `Stake (available: ${userInfo.balance ? formatLongNumber(Number(userInfo.balance) / 10 ** 18, 2) : 0} ${farm.name})`}
-                disabled={!(userInfo && Number(userInfo.balance) > 0) || busy}
+                disabled={!(userInfo && Number(userInfo.balance) > 0) || busy || globalFarmStats.paused || !globalFarmStats.active}
                 onClick={() => setOpen(true)}
             />
             {userInfo &&
@@ -339,6 +415,7 @@ export const WithdrawComponent = () => {
     const wallet = useWallet();
     const {enqueueSnackbar} = useSnackbar();
     const {updateUserInfo, farm, userInfo, waitForDepositOrWithdrawal} = useSingleFarm();
+    const {globalFarmStats} = useFarms();
 
 
     const [value, setValue] = useState("0");
@@ -386,7 +463,7 @@ export const WithdrawComponent = () => {
         <Grid item xs={6} style={{paddingLeft: 6}}>
             <CardButton
                 title={waitingForNetwork ? 'Reading On Chain Data...' : `Unstake (${userInfo && userInfo.staked ? formatLongNumber(Number(userInfo.staked) / 10 ** 18, 2) : 0})`}
-                disabled={!(userInfo && Number(userInfo.staked) > 0) || busy}
+                disabled={!(userInfo && Number(userInfo.staked) > 0) || busy || globalFarmStats.paused}
                 onClick={() => setOpen(true)}
             />
             {userInfo &&
@@ -412,6 +489,7 @@ export const ClaimComponent = () => {
     const [busy, setBusy] = useState(false);
     const {enqueueSnackbar} = useSnackbar();
     const [waitingForNetwork, setWaitingForNetwork] = useState(false);
+    const {globalFarmStats} = useFarms();
 
     const handleHarvest = async () => {
         setBusy(true);
@@ -442,7 +520,7 @@ export const ClaimComponent = () => {
         <Grid item xs={6} style={{paddingRight: 6}}>
             <CardButton
                 title={waitingForNetwork ? 'Reading On Chain Data...' : `Harvest (${userInfo && userInfo.pending ? formatLongNumber(Number(userInfo.pending) / 10 ** 18, 2) : 0})`}
-                disabled={!(userInfo && Number(userInfo.pending) > 0) || busy}
+                disabled={!(userInfo && Number(userInfo.pending) > 0) || busy || globalFarmStats.paused}
                 busy={busy}
                 onClick={handleHarvest}
             />

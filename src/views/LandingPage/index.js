@@ -5,6 +5,7 @@ import useFarms from "../../hooks/useFarms";
 import {farmConfigs} from "../../utils/farmConfigs";
 import {SingleFarmProvider} from "../../contexts/SingleFarmContext";
 import React, {useEffect, useState} from "react";
+import {Alert} from "@material-ui/lab";
 
 const styles = makeStyles((theme) => ({
     root: {
@@ -135,7 +136,21 @@ const LandingPage = () => {
                     <Typography className={classes.heading}>
                         Galaxy Farms
                     </Typography>
+                    <Grid item xs={11} sm={11} md={10} lg={10} style={{marginBottom: 16}}>
+                        {isInitGlobalStatsLoaded && globalFarmStats.paused && <Alert severity={"warning"}>
+                            Farms have been paused by admin while we work on a fix for a bug in the UI, All funds
+                            are recure and all users will be able to withdraw one unpause, users also can use the
+                            emergency withdraw but that will forfeit their rewards, we suggest waiting for the problem
+                            to be fixed
+                        </Alert>}
 
+                    </Grid>
+                    <Grid item xs={11} sm={11} md={10} lg={10} style={{marginBottom: 16}}>
+                        {isInitGlobalStatsLoaded && !globalFarmStats.active && <Alert severity={"warning"}>
+                            Farms have expired deposits have been disabled, stay tuned new farms will live soon!
+                        </Alert>}
+
+                    </Grid>
                     {
                         sorted.map((farm, index) => {
                             if (farm.active)
