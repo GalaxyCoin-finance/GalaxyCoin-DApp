@@ -11,7 +11,7 @@ import React, {useEffect, useState} from "react";
 import Typography from "@material-ui/core/Typography";
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
-import {useWallet, ChainUnsupportedError} from "use-wallet";
+import {useWallet} from "use-wallet";
 import {useHistory, useLocation} from 'react-router-dom';
 import {ROUTES_NAMES} from "../../constants";
 import MenuIcon from "@material-ui/icons/Menu";
@@ -19,14 +19,17 @@ import {chainId} from '../../utils/config';
 import {User} from "react-feather";
 import {useSnackbar} from 'notistack';
 import Logo from "../../components/Root/Logo";
-import {galaxyAddress, gaxAddress, usdcAddress} from "../../utils/config";
-import {getPriceOfGalaxy, getPriceOfGAX, getPriceOnBalancerForSinglePool} from "../../utils/price-utils";
+import {galaxyAddress, gaxAddress} from "../../utils/config";
+import {getPriceOfGalaxy, getPriceOfGAX} from "../../utils/price-utils";
+import Box from "@material-ui/core/Box";
+import {GalaxyGradientButton} from "../../components/Buttons";
 
 const drawerWidth = 240;
 
 const topBarStyles = makeStyles((theme) => ({
     root: {
-        backgroundColor: theme.palette.background.default,
+        //backgroundColor: theme.palette.background.default,
+        background: 'linear-gradient(#0e1156,#03030f)',
         flexGrow: 1,
         borderBottom: '1px solid #373737',
     },
@@ -90,6 +93,22 @@ const topBarStyles = makeStyles((theme) => ({
         textAlign: "center",
         fontSize: 15,
         color: theme.palette.text.heading
+    },
+    heading: {
+        width: '100%',
+        textAlign: "center",
+        fontSize: 32,
+        fontWeight: "bold",
+        color: theme.palette.text.heading
+    },
+    navBorder: {
+        backgroundColor: 'red',
+        width: '100%',
+        height: '2px',
+        backgroundImage: 'url(/images/menu-line.png)',
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
     }
 }));
 
@@ -127,7 +146,7 @@ const TopBar = ({className, ...rest}) => {
     }, [galaxyPrice]);
 
     useEffect(() => {
-        if(!gaxPrice && chainId === 137) {
+        if (!gaxPrice && chainId === 137) {
             getPriceOfGAX().then((res) => {
                 setGaxPrice(res);
             })
@@ -137,7 +156,7 @@ const TopBar = ({className, ...rest}) => {
     useEffect(() => {
         if (wallet.status === 'connected' && wallet.chainId !== chainId) {
             if (lastToast === 0 || performance.now() - lastToast > 5000) {
-                enqueueSnackbar(`Unsupported network Galaxy Coin is only available on ${wallet.networkName} with chainId (${chainId})`, {variant: 'error'});
+                enqueueSnackbar(`Unsupported network Galaxy Coin is only available on polygon`, {variant: 'error'});
                 setLastToast(performance.now());
             }
             setWrongNet(true);
@@ -169,8 +188,12 @@ const TopBar = ({className, ...rest}) => {
         <div style={{paddingTop: '0.5em',}}>
             <Logo withText={true}/>
             <Divider style={{marginTop: '1em'}}/>
-            <GalaxyTabs orientation={"vertical"}/>
+            <Divider style={{marginTop: '1em'}}/>
+            <Ticker fullwidth name={"Buy GLXY"} value={galaxyPrice} handleClick={handleToGLXY}/>
             <Divider/>
+            <Ticker fullwidth name={"Buy GAX"} value={gaxPrice} handleClick={handleToGAX}/>
+            <Divider/>
+
         </div>
     );
 
@@ -193,28 +216,33 @@ const TopBar = ({className, ...rest}) => {
 
                     <Hidden smDown>
 
-                        <Logo withText={!mdDown}/>
-                        <GalaxyTabs/>
+                        <Logo withText={!mdDown} style={{maxHeight: 36}}/>
+                        {/*<GalaxyTabs/>*/}
+                        <Box style={{flex: 1}}>
+
+                        </Box>
+                        {/*Prices*/}
+                        <Ticker name={"Buy GLXY"} value={galaxyPrice} handleClick={handleToGLXY}/>
+                        <Ticker name={"Buy GAX"} value={gaxPrice} handleClick={handleToGAX}/>
+                        <Box style={{minWidth: 8}}/>
                     </Hidden>
 
-                    {/*Prices*/}
-                    <Ticker name={"Buy GLXY"} value={galaxyPrice} handleClick={handleToGLXY}/>
-                    <Ticker name={"Buy GAX"} value={gaxPrice} handleClick={handleToGAX}/>
 
                     {
                         wrongNet &&
-                        <Button variant={"outlined"} className={classes.button}>
+                        <Button className={classes.button}>
                             <Typography variant={"body1"} className={classes.wrongNetText}>
                                 Wrong Network
                             </Typography>
                         </Button>
                     }
-                    <Button variant={"contained"} color={'secondary'} className={classes.button} onClick={() => {
-                        if (wallet.status !== 'connected') {
-                            wallet.connect();
-                            setLastToast(0);
-                        }
-                    }}>
+                    <GalaxyGradientButton variant={"contained"} color={'secondary'} className={classes.button}
+                                          onClick={() => {
+                                              if (wallet.status !== 'connected') {
+                                                  wallet.connect();
+                                                  setLastToast(0);
+                                              }
+                                          }}>
                         <User/>
                         <Typography variant={"subtitle1"} style={{fontSize: '0.9em'}}>
                             {
@@ -223,8 +251,9 @@ const TopBar = ({className, ...rest}) => {
                                     : 'Connect Wallet'
                             }
                         </Typography>
-                    </Button>
+                    </GalaxyGradientButton>
                 </Toolbar>
+                <div className={classes.navBorder}></div>
             </AppBar>
 
             <Hidden mdUp>
@@ -248,11 +277,12 @@ const TopBar = ({className, ...rest}) => {
     );
 }
 
-const Ticker = ({name, value, handleClick}) => {
+const Ticker = ({name, value, handleClick, fullwidth}) => {
     const classes = topBarStyles();
 
     return (
-        <Grid container item xs={1} direction={"column"} alignContent={"center"} className={classes.tickerWrapper}
+        <Grid container item xs={fullwidth ? 12 : 1} direction={"column"} alignContent={"center"}
+              className={classes.tickerWrapper}
               onClick={handleClick}
         >
             <Typography className={classes.tickerHeading}>

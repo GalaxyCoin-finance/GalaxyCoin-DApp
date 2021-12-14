@@ -27,7 +27,7 @@ import {
     waitForTransaction,
     withdraw
 } from "../../utils/farm-core";
-import {explorer, farmAddress} from "../../utils/config.js";
+import {explorer} from "../../utils/config.js";
 import {useSnackbar} from "notistack";
 import {erc20ABI} from "../../utils/abi/erc20-abi";
 import {FarmAbi} from "../../utils/abi/farm-abi";
@@ -35,13 +35,17 @@ import {fromWei, toBN, toWei} from "web3-utils";
 import useSingleFarm from "../../hooks/useSingleFarm";
 import useFarms from "../../hooks/useFarms";
 import ConfirmDialog from "../Dialogs/ConfirmDialog";
+import {GalaxyGradientButton} from "../Buttons";
 
 const styles = makeStyles((theme) => ({
     farmBackground: {
-        backgroundImage: `linear-gradient(to bottom right, ${theme.palette.specific.farmBackground}, ${theme.palette.specific.farmBackgroundTo})`,
+        backgroundImage: `linear-gradient(to bottom right, ${theme.palette.specific.farmBackground}, #08092C)`,
+        //background: 'linear-gradient(#0e1156ff,#0e1156ff)',
+        //border: `1px solid ${theme.palette.secondary.light}`,
+        boxShadow: `0 0px 2px #eaeaea55`,
         borderRadius: 12,
         marginBottom: '1em',
-        borderBottom: `4px solid ${theme.palette.secondary.light}`,
+        borderBottom: `3px solid ${theme.palette.secondary.light}`,
     },
     farmName: {
         textAlign: "center",
@@ -138,7 +142,7 @@ const Farm = ({expandable}) => {
     }
 
     return (
-        <Grid container item xs={11} sm={11} md={10} lg={10} className={classes.farmBackground}>
+        farm ? <Grid container item xs={11} sm={11} md={10} lg={10} className={classes.farmBackground}>
             <Grid container item xs={12} justify={"center"} alignContent={"center"} direction={"column"}
                   style={{cursor: expandable ? 'pointer' : "default"}} onClick={toggleCollapse}>
                 <Typography className={classes.farmName} variant={"h2"}>
@@ -234,7 +238,7 @@ const Farm = ({expandable}) => {
                     </Button>
                 </Grid>
             }
-        </Grid>
+        </Grid> : <div/>
     )
 }
 
@@ -248,6 +252,7 @@ export const EnergencyComponent = () => {
     const [busy, setBusy] = useState(false);
     const [waiting, setWaiting] = useState(false);
     const [open, setOpen] = useState(false);
+    const {farmConfig} = useFarms();
     const {updateUserInfo, farm, userInfo, waitForApproval} = useSingleFarm();
 
 
@@ -264,7 +269,7 @@ export const EnergencyComponent = () => {
         await handleTransactionPromise(
             {
                 transactionPromise: emergencyWithdrawFromFarm(
-                    await getRealContract(farmAddress, wallet.ethereum, FarmAbi),
+                    await getRealContract(farmConfig.farms, wallet.ethereum, FarmAbi),
                     farm.pid,
                     wallet
                 ),
@@ -301,7 +306,7 @@ export const ApproveComponent = () => {
     const [busy, setBusy] = useState(false);
     const [waitingForApproval, setWaitingForApproval] = useState(false);
     const {updateUserInfo, farm, userInfo, waitForApproval} = useSingleFarm();
-    const {globalFarmStats} = useFarms();
+    const {farmConfig, globalFarmStats} = useFarms();
 
     const approveFarm = async () => {
         if (!wallet || !wallet.account) return;
@@ -311,7 +316,7 @@ export const ApproveComponent = () => {
             {
                 transactionPromise: approve(
                     await getRealContract(farm.stakedToken.address, wallet.ethereum, erc20ABI),
-                    farmAddress,
+                    farmConfig.address,
                     new toBN(2).pow(toBN(256)).sub(toBN('1')), // max uint 256 (2**256)-1 to account for the zero offset
                     wallet
                 ),
@@ -342,7 +347,7 @@ export const DepositComponent = () => {
     const wallet = useWallet();
     const {enqueueSnackbar} = useSnackbar();
     const {updateUserInfo, farm, userInfo, waitForDepositOrWithdrawal} = useSingleFarm();
-    const {globalFarmStats} = useFarms();
+    const {farmConfig, globalFarmStats} = useFarms();
 
 
     const [value, setValue] = useState("0");
@@ -367,7 +372,7 @@ export const DepositComponent = () => {
         await handleTransactionPromise(
             {
                 transactionPromise: deposit(
-                    await getRealContract(farmAddress, wallet.ethereum, FarmAbi),
+                    await getRealContract(farmConfig.address, wallet.ethereum, FarmAbi),
                     farm.pid,
                     useMax ? userInfo.balance : toWei(value),
                     wallet
@@ -415,7 +420,7 @@ export const WithdrawComponent = () => {
     const wallet = useWallet();
     const {enqueueSnackbar} = useSnackbar();
     const {updateUserInfo, farm, userInfo, waitForDepositOrWithdrawal} = useSingleFarm();
-    const {globalFarmStats} = useFarms();
+    const {farmConfig, globalFarmStats} = useFarms();
 
 
     const [value, setValue] = useState("0");
@@ -440,7 +445,7 @@ export const WithdrawComponent = () => {
         await handleTransactionPromise(
             {
                 transactionPromise: withdraw(
-                    await getRealContract(farmAddress, wallet.ethereum, FarmAbi),
+                    await getRealContract(farmConfig.address, wallet.ethereum, FarmAbi),
                     farm.pid,
                     useMax ? userInfo.staked : toWei(value),
                     wallet
@@ -489,7 +494,7 @@ export const ClaimComponent = () => {
     const [busy, setBusy] = useState(false);
     const {enqueueSnackbar} = useSnackbar();
     const [waitingForNetwork, setWaitingForNetwork] = useState(false);
-    const {globalFarmStats} = useFarms();
+    const {farmConfig, globalFarmStats} = useFarms();
 
     const handleHarvest = async () => {
         setBusy(true);
@@ -497,7 +502,7 @@ export const ClaimComponent = () => {
         await handleTransactionPromise(
             {
                 transactionPromise: harvest(
-                    await getRealContract(farmAddress, wallet.ethereum, FarmAbi),
+                    await getRealContract(farmConfig.address, wallet.ethereum, FarmAbi),
                     farm.pid,
                     wallet
                 ),
@@ -517,7 +522,7 @@ export const ClaimComponent = () => {
     };
 
     return (
-        <Grid item xs={6} style={{paddingRight: 6}}>
+        <Grid item xs={6} style={{paddingRight: 6, textAlign: "center"}}>
             <CardButton
                 title={waitingForNetwork ? 'Reading On Chain Data...' : `Harvest (${userInfo && userInfo.pending ? formatLongNumber(Number(userInfo.pending) / 10 ** 18, 2) : 0})`}
                 disabled={!(userInfo && Number(userInfo.pending) > 0) || busy || globalFarmStats.paused}
@@ -544,17 +549,17 @@ const CardButton = ({title, disabled, busy, onClick}) => {
                 })
     }
 
-    return <Button
+    return <GalaxyGradientButton
         disabled={wallet && wallet.status === "connected" && disabled} // ignore disabled when not connected to wallet
         variant={"contained"}
         fullWidth
         color={"secondary"}
-        style={{color: 'black', borderRadius: '2px'}}
+        style={{color: 'black'}}
         onClick={wallet && wallet.status === "connected" ? onClick : handleConnect}
     >
         {busy && <CircularProgress style={{height: 24, width: 24, marginRight: 6}}/>}
         {wallet && wallet.status === "connected" ? title : 'Connect Wallet'}
-    </Button>
+    </GalaxyGradientButton>
 }
 
 const AmountDialog = ({title, inError, value, setValue, setUseMax, maxAmount, setOpen, open, handleAction, busy}) => {

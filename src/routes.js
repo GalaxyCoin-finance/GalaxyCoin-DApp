@@ -36,8 +36,8 @@ export const renderRoutes = (routes = []) => {
 
 const routes = [
     {
-        path: ROUTES_NAMES.HOME,
-        exact: true,
+        path: ROUTES_NAMES.FARMS,
+        //exact: true,
         component: lazy(() => import("./views/LandingPage"))
     },
     {
@@ -53,12 +53,12 @@ const routes = [
     {
         path: "/",
         exact: true,
-        component: () => <Redirect to={ROUTES_NAMES.HOME}/>
+        component: () => <Redirect to={ROUTES_NAMES.FARMS}/>
     },
     {
         path: "*",
         exact: true,
-        component: () => <Redirect to={ROUTES_NAMES.HOME}/>
+        component: () => <Redirect to={ROUTES_NAMES.FARMS}/>
     }
 ];
 

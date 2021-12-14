@@ -1,13 +1,11 @@
-import {farmConfigs, getAPYForPID} from "../utils/farmConfigs.js";
+import {getAPYForPID} from "../utils/farmConfigs.js";
 
 const {rpcUrl, chainId} = require('./config.js');
 const Web3 = require('web3');
-const Big = require('big.js');
-const {erc20ABI} = require('../utils/abi/erc20-abi');
 const WEEK_SECONDS = 604800;
 
 let web3 = new Web3(rpcUrl);
-const {fromWei, BN} = web3.utils;
+const {BN} = web3.utils;
 
 export const getRealProvider = async (ethereum) => {
     let realProvider;
@@ -70,10 +68,10 @@ export const getAverageBlockTime = async (web3Args) => {
  *     stakedAmount: total staked by all users
  * }
  */
-export const getFarms = async (farmContract, ethereum, {rewardsPerBlock, totalAllocationPoints}, pricesProvider) => {
-    const pools = [...farmConfigs];
+export const getFarms = async (farmContract, ethereum, {rewardsPerBlock, totalAllocationPoints}, pricesProvider, farmConfig) => {
+    const pools = [...farmConfig.farms];
 
-    for (let i = 0; i < farmConfigs.length; i++) {
+    for (let i = 0; i < farmConfig.farms.length; i++) {
         pools[i] = await getFarmDetails({
             farm: pools[i],
             rewardsPerBlock,
@@ -143,6 +141,10 @@ export const isPaused = async (farmContract) => {
 
 export const isActive = async (farmContract) => {
     return (await farmContract.methods.endBlock().call()) > (await getCurrentBlock());
+}
+
+export const hasFarmStarted = async (farmContract) => {
+    return (await farmContract.methods.endBlock().call()) != 0;
 }
 
 // write

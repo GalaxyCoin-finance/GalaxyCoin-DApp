@@ -12,8 +12,6 @@ import routes, {renderRoutes} from './routes';
 import {HashRouter} from 'react-router-dom';
 import MainLayout from "./layout/MainLayout";
 import Background from "./components/Root/Background";
-import {FarmsProvider} from "./contexts/FarmsContext";
-import {PricesProvider} from "./contexts/PricesContext";
 
 const jss = create({plugins: [...jssPreset().plugins, rtl()]});
 
@@ -25,6 +23,7 @@ const appStyles = makeStyles((theme) => ({
         filter: 'blur(3px)',
         height: '100%',
         width: "100%",
+        backgroundColor: '#00000055'
     },
 }));
 
@@ -47,19 +46,15 @@ const App = () => {
                         dense
                         maxSnack={3}
                     >
-                        <PricesProvider>
-                            <FarmsProvider>
-                                <HashRouter>
-                                    <GlobalStyles/>
-                                    <div className={classes.background}>
-                                        <Background/>
-                                    </div>
-                                    <MainLayout>
-                                        {renderRoutes(routes)}
-                                    </MainLayout>
-                                </HashRouter>
-                            </FarmsProvider>
-                        </PricesProvider>
+                        <HashRouter>
+                            <GlobalStyles/>
+                            <div className={classes.background}>
+                                <Background/>
+                            </div>
+                            <MainLayout>
+                                {renderRoutes(routes)}
+                            </MainLayout>
+                        </HashRouter>
                     </SnackbarProvider>
                 </MuiPickersUtilsProvider>
             </StylesProvider>
