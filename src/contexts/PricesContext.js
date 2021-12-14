@@ -1,5 +1,5 @@
 import React, {createContext, useEffect, useState} from 'react';
-import {farmConfigs, getLPPrice} from "../utils/farmConfigs";
+import {getLPPrice} from "../utils/farmConfigs";
 import {getPriceOfGalaxy, getPriceOfGAX} from "../utils/price-utils";
 
 const PricesContext = createContext({
@@ -12,12 +12,16 @@ const PricesContext = createContext({
     loaded: false
 });
 
-export const PricesProvider = ({children}) => {
+export const PricesProvider = ({farmConfig, children}) => {
 
-    const [lpPrices, setLpPrices] = useState(farmConfigs.map(farm => null));
+    const [lpPrices, setLpPrices] = useState(farmConfig.farms.map(farm => null));
     const [gaxPrice, setGaxPricce] = useState(null);
     const [glxyPrice, setGlxyPrice] = useState(null);
     const [loaded, setLoaded] = useState(false);
+
+    useEffect(() => {
+        setLoaded(false);
+    }, [farmConfig]);
 
     useEffect(() => {
         if (!loaded) {
@@ -25,7 +29,7 @@ export const PricesProvider = ({children}) => {
             lpPrices.forEach(price => hasLoadd = hasLoadd && price);
             setLoaded(hasLoadd);
         }
-    }, [lpPrices, gaxPrice, glxyPrice]);
+    }, [lpPrices, gaxPrice, glxyPrice, farmConfig, loaded]);
 
     const getGaxPrice = async (forceUpdate) => {
         let gax = gaxPrice;
@@ -47,12 +51,13 @@ export const PricesProvider = ({children}) => {
 
     const getLPPricesPrice = async (forceUpdate) => {
         const lpPrx = await Promise.all(
-            farmConfigs.map(async farm => {
+            farmConfig.farms.map(async farm => {
                 if (lpPrices[farm.pid] && !forceUpdate) return lpPrices[farm.pid];
                 return getLPPrice(
                     farm.pid,
                     farm,
                     farm.weightedToken === 'GAX' ? await getGaxPrice() : await getGLXYPrice(),
+                    farmConfig
                 )
             })
         )
@@ -64,7 +69,7 @@ export const PricesProvider = ({children}) => {
         getGaxPrice();
         getGLXYPrice();
         getLPPricesPrice();
-    }, []);
+    }, [farmConfig]);
 
     return (
         <PricesContext.Provider

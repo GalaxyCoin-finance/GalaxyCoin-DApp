@@ -5,24 +5,24 @@ import {
     getRealContract,
     getRealProvider,
     getRewardsPerBlock,
-    getTotalAllocPoints,
+    getTotalAllocPoints, hasFarmStarted,
     isActive,
     isPaused
 } from "../utils/farm-core";
-import {farmConfigs} from "../utils/farmConfigs";
 import usePrices from "../hooks/usePrices";
 
-const {farmAddress, rpcUrl} = require('../utils/config.js');
+const {rpcUrl} = require('../utils/config.js');
 const {FarmAbi} = require('../utils/abi/farm-abi');
 
 const FarmsContext = createContext({
+    farmConfig: null,
     globalFarmStats: null,
     initGlobalStats: null,
     isInitGlobalStatsLoaded: false,
-    farms: farmConfigs,
+    farms: [],
 });
 
-export const FarmsProvider = ({children}) => {
+export const FarmsProvider = ({farmConfig, children}) => {
     const wallet = useWallet();
     const pricesProvider = usePrices();
 
@@ -32,7 +32,16 @@ export const FarmsProvider = ({children}) => {
     });
     const [isInitGlobalStatsLoaded, setIsInitGlobalStatsLoaded] = useState(false);
 
-    const [farms, setFarms] = useState(farmConfigs);
+    const [farms, setFarms] = useState(farmConfig.farms);
+
+    useEffect(() => {
+        setFarms(farmConfig.farms);
+        setIsInitGlobalStatsLoaded(false);
+        setGlobalFarmStats({
+            totalAllocationPoints: null,
+            rewardsPerBlock: null,
+        })
+    }, [farmConfig])
 
     useEffect(() => {
         if (!isInitGlobalStatsLoaded)
@@ -47,7 +56,11 @@ export const FarmsProvider = ({children}) => {
     const initFarms = async () => {
         setFarms(
             await getFarms(
-                await getRealFarmContract(), wallet && wallet.status === "connected" ? wallet.ethereum : getRealProvider(rpcUrl), await initGlobalStats(), pricesProvider
+                await getRealFarmContract(),
+                wallet && wallet.status === "connected" ? wallet.ethereum : getRealProvider(rpcUrl),
+                await initGlobalStats(),
+                pricesProvider,
+                farmConfig
             )
         )
     }
@@ -69,13 +82,14 @@ export const FarmsProvider = ({children}) => {
 
         const active = await isActive(realFarmContract);
         const paused = await isPaused(realFarmContract);
-        console.log(active);
+        const hasStarted = await hasFarmStarted(realFarmContract);
         setGlobalFarmStats({
             ...globalFarmStats,
             totalAllocationPoints,
             rewardsPerBlock,
             active,
-            paused
+            paused,
+            hasStarted
         });
         return {
             rewardsPerBlock,
@@ -85,12 +99,12 @@ export const FarmsProvider = ({children}) => {
 
     useEffect(() => {
         initGlobalStats();
-    }, []);
+    }, [farmConfig]);
 
 
     const getRealFarmContract = async () => {
         return getRealContract(
-            farmAddress,
+            farmConfig.address,
             wallet && wallet.status === "connected" ? wallet.ethereum : rpcUrl,
             FarmAbi
         )
@@ -99,6 +113,7 @@ export const FarmsProvider = ({children}) => {
     return (
         <FarmsContext.Provider
             value={{
+                farmConfig,
                 globalFarmStats,
                 isInitGlobalStatsLoaded,
                 initGlobalStats,

@@ -1,12 +1,15 @@
 import Page from "../../components/Root/Page";
 import {makeStyles} from "@material-ui/core";
+import Box from "@material-ui/core/Box";
 
 const styles = makeStyles((theme) => ({
     root: {
-        backgroundImage: `url('./images/background.jpg')`,
+        backgroundImage: `url('./images/background-old.jpg')`,
+        backgroundSize: 'cover',
         backgroundRepeat: "round",
-        backgroundSize: "cover",
-        height: '100%',
+        backgroundColor: 'black',
+        backgroundAttachment: "fixed",
+        height: '100vh',
         width: "100%",
     },
 }));
@@ -15,11 +18,10 @@ const LandingPage = () => {
     const classes = styles();
 
     return (
-        <Page
+        <Box
             className={classes.root}
-            title={'Home'}
         >
-        </Page>
+        </Box>
     )
 }
 

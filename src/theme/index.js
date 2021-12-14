@@ -38,7 +38,7 @@ const themesOptions = [
                         color: colors.blueGrey[600]
                     }
                 }
-            }
+            },
         },
         palette: {
             type: 'dark',
@@ -49,27 +49,42 @@ const themesOptions = [
                 default: "#121648",
             },
             primary: {
-                main: "#42018d"
+                main: "rgb(38, 164, 254)"
             },
             secondary: {
-                main: '#e05829'
+                main: 'rgb(38, 164, 254)'
             },
             tertiary: {
                 main: "#80102a"
             },
             specific: {
-                farmBackground: "#12245499",
-                farmBackgroundTo: "#21266dee",
-                farmCardBorder: "#2f8db3"
+                farmBackground: "#122454",
+                farmBackgroundTo: "#21266d",
+                farmCardBorder: "rgb(38, 164, 254)"
             },
             text: {
-                heading: "#ffac01",
-                subHeading: "#e05829",
+                heading: "rgb(38, 164, 254)",
+                subHeading: "#E3066B",
                 subSubHeading: "#d03f46",
                 primary: "#d9d9d9",
             },
         },
-        shadows: softShadows
+        shadows: softShadows,
+        typography: {
+            fontFamily: [
+                'Rubik',
+                '-apple-system',
+                'BlinkMacSystemFont',
+                '"Segoe UI"',
+                'Roboto',
+                '"Helvetica Neue"',
+                'Arial',
+                'sans-serif',
+                '"Apple Color Emoji"',
+                '"Segoe UI Emoji"',
+                '"Segoe UI Symbol"',
+            ].join(','),
+        },
     }
 ];
 

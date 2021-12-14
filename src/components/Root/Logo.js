@@ -26,7 +26,7 @@ const Logo = ({withText}) => {
                 withText &&
                 <img
                     alt="Logo"
-                    height={62}
+                    height={50}
                     src={"/images/logo.png"}
                 />
             }

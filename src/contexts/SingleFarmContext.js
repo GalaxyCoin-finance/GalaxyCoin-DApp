@@ -2,11 +2,10 @@ import React, {createContext, useEffect, useState} from 'react';
 import {useWallet} from "use-wallet";
 import {getFarmDetails, getPending, getRealContract, getStaked, sleep} from "../utils/farm-core";
 import {getAllowance, getBalance} from "../utils/erc20-core";
-import {farmConfigs} from "../utils/farmConfigs";
 import useFarms from "../hooks/useFarms";
 import usePrices from "../hooks/usePrices";
 
-const {farmAddress, rpcUrl, gaxAddress} = require('../utils/config.js');
+const {rpcUrl, gaxAddress} = require('../utils/config.js');
 const {FarmAbi} = require('../utils/abi/farm-abi');
 const {erc20ABI} = require('../utils/abi/erc20-abi');
 
@@ -25,17 +24,22 @@ export const SingleFarmProvider = ({pid, children}) => {
     const pricesProvider = usePrices();
 
     const {
+        farmConfig,
         globalFarmStats,
         isInitGlobalStatsLoaded,
     } = useFarms();
 
-    const [farm, setFarm] = useState(farmConfigs[pid]);
+    const [farm, setFarm] = useState(farmConfig.farms[pid]);
     const [userInfo, setUserInfo] = useState(null);
+
+    useEffect(() => {
+        setFarm(farmConfig.farms[pid])
+    }, [farmConfig, pid])
 
     useEffect(() => {
         if (isInitGlobalStatsLoaded)
             updateFarmInfo(pid);
-    }, [isInitGlobalStatsLoaded]);
+    }, [isInitGlobalStatsLoaded, farmConfig]);
 
     useEffect(() => {
         updateUserInfo(true);
@@ -43,7 +47,7 @@ export const SingleFarmProvider = ({pid, children}) => {
 
     const getRealFarmContract = async () => {
         return getRealContract(
-            farmAddress,
+            farmConfig.address,
             wallet && wallet.status === "connected" ? wallet.ethereum : rpcUrl,
             FarmAbi
         )
@@ -51,12 +55,13 @@ export const SingleFarmProvider = ({pid, children}) => {
 
 
     const updateFarmInfo = async () => {
+        if (!farmConfig.farms[pid] || !farmConfig.farms[pid].pid) return;
         const realFarmContract = await getRealFarmContract()
 
         const {rewardsPerBlock, totalAllocationPoints} = globalFarmStats;
 
         const farmRes = await getFarmDetails({
-            farm: farmConfigs[pid],
+            farm: farmConfig.farms[pid],
             farmContract: realFarmContract,
             rewardsPerBlock,
             totalAllocPoints: totalAllocationPoints,
@@ -83,7 +88,7 @@ export const SingleFarmProvider = ({pid, children}) => {
         if (wallet.account) {
             const erc20 = await getRealContract(farm.stakedToken.address, wallet.ethereum, erc20ABI);
             const gaxContract = await getRealContract(gaxAddress, wallet.ethereum, erc20ABI);
-            const farmContract = await getRealContract(farmAddress, wallet.ethereum, FarmAbi);
+            const farmContract = await getRealContract(farmConfig.address, wallet.ethereum, FarmAbi);
 
             const staked = await getStaked(farmContract, pid, wallet.account);
 
@@ -95,7 +100,7 @@ export const SingleFarmProvider = ({pid, children}) => {
                 gaxBalance: await getBalance(gaxContract, wallet.account),
                 balance: await getBalance(erc20, wallet.account),
                 pending: await getPending(farmContract, pid, wallet.account),
-                allowance: await getAllowance(erc20, wallet.account, farmAddress),
+                allowance: await getAllowance(erc20, wallet.account, farmConfig.address),
                 shareRatio: myShareRatio,
                 weeklyRewards: farm.totalRewardsPerWeek * myShareRatio,
             }
@@ -116,7 +121,7 @@ export const SingleFarmProvider = ({pid, children}) => {
 
     const waitForDepositOrWithdrawal = async () => {
         const oldDeposit = Number(userInfo.staked);
-        const farmContract = await getRealContract(farmAddress, wallet.ethereum, FarmAbi);
+        const farmContract = await getRealContract(farmConfig.address, wallet.ethereum, FarmAbi);
         let currStake = Number(await getStaked(farmContract, pid, wallet.account));
         do {
             currStake = Number(await getStaked(farmContract, pid, wallet.account));
@@ -128,7 +133,7 @@ export const SingleFarmProvider = ({pid, children}) => {
         const erc20 = await getRealContract(farm.stakedToken.address, wallet.ethereum, erc20ABI);
         let allowance = 0;
         do {
-            allowance = Number(await getAllowance(erc20, wallet.account, farmAddress));
+            allowance = Number(await getAllowance(erc20, wallet.account, farmConfig.address));
             await sleep(2300); // one block
         } while (allowance === 0);
     }
