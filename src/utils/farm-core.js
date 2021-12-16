@@ -1,3 +1,4 @@
+import Big from "big-js";
 import {getAPYForPID} from "../utils/farmConfigs.js";
 
 const {rpcUrl, chainId} = require('./config.js');
@@ -90,8 +91,9 @@ export const getFarmDetails = async ({farm, rewardsPerBlock, totalAllocPoints, f
     const poolDistPerBlock = (Number(pool.allocPoint) / Number(totalAllocPoints)) * Number(rewardsPerBlock);
     const blocksPerWeek = WEEK_SECONDS / 2.370920137000084;
     const totalRewardsPerWeek = blocksPerWeek * poolDistPerBlock;
+    const active = await isActive(farmContract);
 
-    const apy = await getAPYForPID(farm.pid, pool, totalRewardsPerWeek, pricesProvider);
+    const apy = active ? await getAPYForPID(farm.pid, pool, totalRewardsPerWeek, pricesProvider) : new Big('0');
     return {
         ...farm,
         // some legacy functions depend on this we remove when we clear them out
@@ -111,10 +113,10 @@ export const getStaked = async (farmContract, pid, account) => {
 
 export const getPending = async (farmContract, pid, account) => {
     // TODO revert this workaround 
-    /*try {
+    try {
         const pending = await farmContract.methods.pending(pid, account).call();
         return pending;
-    } catch ( error ) { */
+    } catch ( error ) { 
     await sleep(500);
     const userInfo = await farmContract.methods.userInfo(pid, account).call();
 
@@ -123,7 +125,7 @@ export const getPending = async (farmContract, pid, account) => {
     const accERC20PerShare = poolInfo.accERC20PerShare;
 
     return new BN(userInfo.amount).mul(new BN(accERC20PerShare)).div(new BN('1000000000000000000000000000000000000')).sub(new BN(userInfo.rewardDebt));
-    /*}*/
+    }
 
 }
 

@@ -239,7 +239,11 @@ const TopBar = ({className, ...rest}) => {
                     <GalaxyGradientButton variant={"contained"} color={'secondary'} className={classes.button}
                                           onClick={() => {
                                               if (wallet.status !== 'connected') {
-                                                  wallet.connect();
+                                                  try{
+                                                  wallet.connect().catch(error => {
+
+                                                  });
+                                                } catch(e){} 
                                                   setLastToast(0);
                                               }
                                           }}>

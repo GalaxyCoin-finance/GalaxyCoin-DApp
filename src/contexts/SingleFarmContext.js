@@ -55,7 +55,6 @@ export const SingleFarmProvider = ({pid, children}) => {
 
 
     const updateFarmInfo = async () => {
-        if (!farmConfig.farms[pid] || !farmConfig.farms[pid].pid) return;
         const realFarmContract = await getRealFarmContract()
 
         const {rewardsPerBlock, totalAllocationPoints} = globalFarmStats;

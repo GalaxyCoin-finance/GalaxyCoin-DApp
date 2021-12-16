@@ -36,6 +36,7 @@ import useSingleFarm from "../../hooks/useSingleFarm";
 import useFarms from "../../hooks/useFarms";
 import ConfirmDialog from "../Dialogs/ConfirmDialog";
 import {GalaxyGradientButton} from "../Buttons";
+import usePrices from "../../hooks/usePrices";
 
 const styles = makeStyles((theme) => ({
     farmBackground: {
@@ -130,6 +131,7 @@ const Farm = ({expandable}) => {
 
     const {globalFarmStats, isInitGlobalStatsLoaded, farms} = useFarms();
     const {farm, userInfo, updateUserInfo, updateFarmInfo} = useSingleFarm();
+    const prices = usePrices();
     const [open, setOpen] = useState(false);
 
     const updateInfos = () => {
@@ -146,12 +148,14 @@ const Farm = ({expandable}) => {
             <Grid container item xs={12} justify={"center"} alignContent={"center"} direction={"column"}
                   style={{cursor: expandable ? 'pointer' : "default"}} onClick={toggleCollapse}>
                 <Typography className={classes.farmName} variant={"h2"}>
-                    {farm.name}
+                    {farm.name} 
                 </Typography>
-
+                <Typography className={classes.farmComposition}>
+                {farm.name} ≈ ${formatLongNumber(prices.lpPrices[farm.pid], 6)}
+                </Typography>
                 <Typography className={classes.farmComposition}>
                     {farm.composition} <a href={farm.buyLink} style={{color: 'cyan'}}
-                                          target={'_blank'}> Get {farm.name} </a>
+                                          target={'_blank'} rel="noreferrer"> Get {farm.name} </a>
                 </Typography>
             </Grid>
 
@@ -348,7 +352,7 @@ export const DepositComponent = () => {
     const {enqueueSnackbar} = useSnackbar();
     const {updateUserInfo, farm, userInfo, waitForDepositOrWithdrawal} = useSingleFarm();
     const {farmConfig, globalFarmStats} = useFarms();
-
+    const prices = usePrices();
 
     const [value, setValue] = useState("0");
     const [useMax, setUseMax] = useState(false);
@@ -394,7 +398,10 @@ export const DepositComponent = () => {
     return (
         <Grid item xs={12}>
             <CardButton
-                title={waitingForNetwork ? 'Reading On Chain Data...' : `Stake (available: ${userInfo.balance ? formatLongNumber(Number(userInfo.balance) / 10 ** 18, 2) : 0} ${farm.name})`}
+                title={waitingForNetwork ? 
+                    'Reading On Chain Data...' :
+                     `Stake (available: ${userInfo.balance ? formatLongNumber(Number(userInfo.balance) / 10 ** 18, 2) : 0} ${farm.name}) ≈ 
+                     ($${userInfo.balance ? formatLongNumber((Number(userInfo.balance) / 10 ** 18) * prices.lpPrices[farm.pid], 2) : formatLongNumber(0.00)})`}
                 disabled={!(userInfo && Number(userInfo.balance) > 0) || busy || globalFarmStats.paused || !globalFarmStats.active}
                 onClick={() => setOpen(true)}
             />
@@ -421,7 +428,7 @@ export const WithdrawComponent = () => {
     const {enqueueSnackbar} = useSnackbar();
     const {updateUserInfo, farm, userInfo, waitForDepositOrWithdrawal} = useSingleFarm();
     const {farmConfig, globalFarmStats} = useFarms();
-
+    const prices = usePrices();
 
     const [value, setValue] = useState("0");
     const [useMax, setUseMax] = useState(false);
@@ -467,7 +474,9 @@ export const WithdrawComponent = () => {
     return (
         <Grid item xs={6} style={{paddingLeft: 6}}>
             <CardButton
-                title={waitingForNetwork ? 'Reading On Chain Data...' : `Unstake (${userInfo && userInfo.staked ? formatLongNumber(Number(userInfo.staked) / 10 ** 18, 2) : 0})`}
+                title={waitingForNetwork ? 'Reading On Chain Data...' : `Unstake (${userInfo && userInfo.staked ? formatLongNumber(Number(userInfo.staked) / 10 ** 18, 2) : 0})
+                ≈ ($${userInfo && userInfo.staked ? formatLongNumber( (Number(userInfo.staked) / 10 ** 18) * prices.lpPrices[farm.pid] , 2) : 0})
+                `}
                 disabled={!(userInfo && Number(userInfo.staked) > 0) || busy || globalFarmStats.paused}
                 onClick={() => setOpen(true)}
             />
@@ -495,7 +504,7 @@ export const ClaimComponent = () => {
     const {enqueueSnackbar} = useSnackbar();
     const [waitingForNetwork, setWaitingForNetwork] = useState(false);
     const {farmConfig, globalFarmStats} = useFarms();
-
+    const prices = usePrices();
     const handleHarvest = async () => {
         setBusy(true);
         let failed = false;
@@ -524,7 +533,8 @@ export const ClaimComponent = () => {
     return (
         <Grid item xs={6} style={{paddingRight: 6, textAlign: "center"}}>
             <CardButton
-                title={waitingForNetwork ? 'Reading On Chain Data...' : `Harvest (${userInfo && userInfo.pending ? formatLongNumber(Number(userInfo.pending) / 10 ** 18, 2) : 0})`}
+                title={waitingForNetwork ? 'Reading On Chain Data...' : `Harvest (${userInfo && userInfo.pending ? formatLongNumber(Number(userInfo.pending) / 10 ** 18, 2) : 0})
+                ≈ ($${userInfo && userInfo.pending ? formatLongNumber( (Number(userInfo.pending) / 10 ** 18) * prices.gaxPrice, 2) : 0})`}
                 disabled={!(userInfo && Number(userInfo.pending) > 0) || busy || globalFarmStats.paused}
                 busy={busy}
                 onClick={handleHarvest}
@@ -570,6 +580,11 @@ const AmountDialog = ({title, inError, value, setValue, setUseMax, maxAmount, se
             maxWidth={'sm'}
             open={open}
             onClose={() => setOpen(false)}
+            PaperProps={{
+                style: {
+                    background: `linear-gradient(to bottom right, #122454, #08092C)`
+                },
+              }}
         >
             <DialogTitle>
                 <Typography variant={"h4"}>
@@ -612,7 +627,7 @@ const AmountDialog = ({title, inError, value, setValue, setUseMax, maxAmount, se
                 {inError && <Alert severity={"error"} style={{marginTop: 6, marginBottom: 6}}>{inError}</Alert>}
                 <Grid container spacing={2} style={{marginTop: 6}}>
                     <Grid item xs={6}>
-                        <Button
+                        <GalaxyGradientButton
                             variant={"contained"}
                             fullWidth color={"secondary"}
                             disabled={busy || inError}
@@ -620,10 +635,11 @@ const AmountDialog = ({title, inError, value, setValue, setUseMax, maxAmount, se
                         >
                             {busy && <CircularProgress style={{height: 24, width: 24, marginRight: 6}}/>}
                             {title}
-                        </Button>
+                        </GalaxyGradientButton>
                     </Grid>
                     <Grid item xs={6}>
                         <Button
+                            color={"primary"}
                             variant={"contained"}
                             fullWidth
                             disabled={busy}

@@ -14,7 +14,7 @@ ReactDOM.render(
                 chainId={chainId}
                 connectors={{}}
                 pollBalanceInterval={2000}
-                pollBlockNumberInterval={5000}
+                pollBlockNumberInterval={2000}
                 >
                 <App/>
             </UseWalletProvider>

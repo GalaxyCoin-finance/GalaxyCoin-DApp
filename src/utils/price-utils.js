@@ -2,6 +2,8 @@ import {rpcUrl, balancerVaultAddress, galaxyAddress, gaxLPAddress, usdcAddress, 
 import {balancerVaultAbi} from "./abi/balancer-vault-abi";
 import {univ2LpAbi} from "./abi/univ2-lp-abi";
 import {univ2RouterAbi} from "./abi/univ2-router-abi";
+import { erc20ABI } from './abi/erc20-abi';
+import { getBalance } from './erc20-core';
 
 const Web3 = require('web3');
 const web3 = new Web3(rpcUrl);
@@ -12,7 +14,7 @@ const {fromWei, toWei} = web3.utils;
 export const getPriceOfGalaxy = async () => {
     const vaultContract = new web3.eth.Contract(balancerVaultAbi, balancerVaultAddress);
 
-    const poolTokens = await vaultContract.methods.getPoolTokens(glxyPoolId).call();
+    const poolTokens = await vaultContract.methods.getPoolTokens('0xd9b84f68af362159da621473ef0f979709734db6000100000000000000000071').call();
 
     let usdcBalance;
     let galaxyBalance;
@@ -27,7 +29,7 @@ export const getPriceOfGalaxy = async () => {
         }
     }
 
-    return usdcBalance.times(5).div(galaxyBalance).toFixed(4).toString();
+    return usdcBalance.times('7.2857142857142857142857142857143').div(galaxyBalance).toFixed(4).toString();
 }
 
 export const getPriceOfGAX = async () => {
@@ -53,4 +55,28 @@ export const getPriceOfGAX = async () => {
 }
 
 
+export const getAmountOfTokenInBalancerPool = async ({poolID , tokenAddress }) => {
+    const vaultContract = new web3.eth.Contract(balancerVaultAbi, balancerVaultAddress);
+    const poolTokens = await vaultContract.methods.getPoolTokens(poolID).call();
 
+
+    let balance;
+    for(let i = 0; i < poolTokens.tokens.length; i++) {
+        if(poolTokens.tokens[i].toLowerCase() === tokenAddress.toLowerCase()) {
+            balance = new Big(fromWei(poolTokens.balances[i]));
+        }
+    }
+    return balance;
+}
+
+
+export const getAmountOfTokenInPool = async ({Lptoken , tokenAddress }) => {
+    const uniV2LPContract = new web3.eth.Contract(univ2LpAbi, Lptoken);
+    const uniV2RouterContract = new web3.eth.Contract(univ2RouterAbi, quickswapRouterAddress);
+    const lpErc20Contract = new web3.eth.Contract(erc20ABI, tokenAddress);
+    console.log('Lptoken = '+Lptoken)
+    const balance = await getBalance(lpErc20Contract, Lptoken);
+    console.log('balance gax = '+balance )
+
+    return balance;
+}
